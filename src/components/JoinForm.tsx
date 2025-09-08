@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { hashtagExists, normalizeHashtag, HashtagError } from '@/lib/hashtags';
+import { supabase } from '@/lib/supabaseClient';
 
 interface JoinFormProps {
   onJoin: () => void;
@@ -41,6 +42,35 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
     setError(null);
 
     try {
+      // Check if we're in a browser environment
+      if (typeof window === 'undefined') {
+        setError('Please try again in a moment.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Test Supabase connection first
+      console.log('Testing Supabase connection...');
+      try {
+        const { data: testData, error: testError } = await supabase
+          .from('hashtags')
+          .select('count')
+          .limit(1);
+        
+        if (testError) {
+          console.error('Supabase connection test failed:', testError);
+          setError('Unable to connect to the database. Please try again later.');
+          setIsSubmitting(false);
+          return;
+        }
+        console.log('Supabase connection test passed');
+      } catch (connectionError) {
+        console.error('Supabase connection error:', connectionError);
+        setError('Unable to connect to the server. Please check your internet connection.');
+        setIsSubmitting(false);
+        return;
+      }
+
       // Normalize the hashtag code
       const normalizedCode = normalizeHashtag(eventCode.trim());
       console.log('Normalized code:', normalizedCode);
@@ -66,8 +96,18 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
       
     } catch (err) {
       console.error('Error checking hashtag:', err);
+      
+      // More specific error handling
       if (err instanceof HashtagError) {
         setError(err.message);
+      } else if (err instanceof Error) {
+        if (err.message.includes('fetch')) {
+          setError('Network error. Please check your connection and try again.');
+        } else if (err.message.includes('Failed to fetch')) {
+          setError('Unable to connect to the server. Please try again.');
+        } else {
+          setError(`Error: ${err.message}`);
+        }
       } else {
         setError('Unable to verify hashtag. Please try again.');
       }

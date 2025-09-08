@@ -74,9 +74,10 @@ export function normalizeHashtag(code: string): string {
  * @throws HashtagError if the code is invalid
  */
 export async function hashtagExists(code: string): Promise<boolean> {
-  const normalized = normalizeHashtag(code);
-
   try {
+    const normalized = normalizeHashtag(code);
+    console.log('hashtagExists: checking for normalized code:', normalized);
+
     const { data, error } = await supabase
       .from('hashtags')
       .select('id')
@@ -84,14 +85,16 @@ export async function hashtagExists(code: string): Promise<boolean> {
       .limit(1);
 
     if (error) {
-      console.error('Error checking hashtag existence:', error);
-      return false;
+      console.error('Supabase error checking hashtag existence:', error);
+      throw new Error(`Database error: ${error.message}`);
     }
 
-    return data && data.length > 0;
+    const exists = data && data.length > 0;
+    console.log('hashtagExists: result for', normalized, 'is', exists);
+    return exists;
   } catch (err) {
     console.error('Error checking hashtag existence:', err);
-    return false;
+    throw err; // Re-throw to let the calling function handle it
   }
 }
 
