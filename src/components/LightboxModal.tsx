@@ -203,7 +203,9 @@ export default function LightboxModal({
             <video
               src={publicUrl}
               controls
+              muted
               playsInline
+              preload="metadata"
               className="max-h-[80vh] max-w-full rounded"
             >
               Your browser does not support the video tag.
