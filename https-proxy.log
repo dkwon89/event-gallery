@@ -1,0 +1,45 @@
+🚀 HTTPS proxy server running at:
+   https://localhost:3001
+   https://192.168.5.64:3001
+
+📱 Use the HTTPS URL on your phone for camera access!
+
+⚠️  Make sure Next.js dev server is running on port 3000
+Proxying GET /
+Proxying GET /_next/static/media/797e433ab948586e-s.p.dbea232f.woff2
+Proxying GET /_next/static/chunks/897e9_next_dist_compiled_react-dom_6cfc5d1e._.js
+Proxying GET /_next/static/chunks/897e9_next_dist_compiled_e53dd195._.js
+Proxying GET /_next/static/chunks/%5Broot-of-the-server%5D__93d7fceb._.css
+Proxying GET /_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_20a318b5._.js
+Proxying GET /_next/static/chunks/897e9_next_dist_compiled_next-devtools_index_842950b5.js
+Proxying GET /_next/static/media/caa3a2e1cccd8315-s.p.6435ea53.woff2
+Proxying GET /_next/static/chunks/897e9_next_dist_client_1997cd70._.js
+Proxying GET /_next/static/chunks/897e9_%40swc_helpers_cjs_73e13a0d._.js
+Proxying GET /_next/static/chunks/897e9_next_dist_ce6f8006._.js
+Proxying GET /_next/static/chunks/Chatgpt%20hashtag_hashtag04_event-gallery_a0ff3932._.js
+Proxying GET /_next/static/chunks/turbopack-Chatgpt%20hashtag_hashtag04_event-gallery_03a7890b._.js
+Proxying GET /_next/static/chunks/897e9_next_dist_afdba705._.js
+Proxying GET /_next/static/chunks/Chatgpt%20hashtag_hashtag04_event-gallery_src_app_layout_tsx_18973569._.js
+Proxying GET /_next/static/chunks/Chatgpt%20hashtag_hashtag04_event-gallery_src_app_favicon_ico_mjs_2b5d19d1._.js
+Proxying GET /_next/static/chunks/Chatgpt%20hashtag_hashtag04_event-gallery_a497e19c._.js
+Proxying GET /_next/static/chunks/897e9_54e37ff3._.js
+Proxying GET /_next/static/chunks/Chatgpt%20hashtag_hashtag04_event-gallery_src_5f561f2c._.js
+Proxying GET /_next/static/chunks/897e9_ecb4fe46._.js
+Proxying GET /_next/static/chunks/Chatgpt%20hashtag_hashtag04_event-gallery_src_app_page_tsx_790440e9._.js
+Proxying GET /_next/static/chunks/897e9_next_dist_client_components_builtin_global-error_790440e9.js
+Proxying GET /manifest.json
+Proxying GET /_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_c8c997ce._.js
+Proxying GET /_next/static/chunks/%5Bturbopack%5D_browser_dev_hmr-client_hmr-client_ts_921f5735._.js
+Proxying GET /_next/webpack-hmr
+Proxying GET /__nextjs_font/geist-latin.woff2
+Proxying GET /sw.js
+Proxying GET /_next/static/js/
+Proxying GET /manifest.json
+Proxying GET /
+Proxying GET /_next/static/css/
+Proxying GET /_next/static/js
+Proxying GET /_next/static/css
+Proxying GET /_next/static/chunks/897e9_qr-scanner_qr-scanner-worker_min_7471dfe2.js
+Proxying GET /_next/static/chunks/897e9_qr-scanner_qr-scanner-worker_min_5d0d312c.js
+Proxying POST /__nextjs_original-stack-frames
+Proxying POST /__nextjs_original-stack-frames

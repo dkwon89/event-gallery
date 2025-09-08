@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug localStorage</title>
+</head>
+<body>
+    <h1>Debug localStorage</h1>
+    <button onclick="clearStorage()">Clear localStorage</button>
+    <div id="output"></div>
+    
+    <script>
+        const eventCode = localStorage.getItem('eventCode');
+        const displayName = localStorage.getItem('displayName');
+        
+        document.getElementById('output').innerHTML = `
+            <p><strong>eventCode:</strong> "${eventCode}"</p>
+            <p><strong>displayName:</strong> "${displayName}"</p>
+            <p><strong>eventCode type:</strong> ${typeof eventCode}</p>
+            <p><strong>eventCode length:</strong> ${eventCode ? eventCode.length : 'null'}</p>
+        `;
+        
+        // Test normalization
+        try {
+            // This is a simplified version of the normalizeHashtag function
+            function normalizeHashtag(code) {
+                if (!code || typeof code !== 'string') {
+                    throw new Error('Hashtag is required');
+                }
+                
+                let normalized = code.trim().toLowerCase();
+                normalized = normalized.replace(/\s+/g, '-');
+                normalized = normalized.replace(/[^a-z0-9_-]/g, '');
+                normalized = normalized.replace(/-+/g, '-');
+                normalized = normalized.replace(/^-+|-+$/g, '');
+                
+                if (normalized.length < 3 || normalized.length > 30) {
+                    throw new Error('Invalid length');
+                }
+                
+                if (!/^[a-z0-9_-]{3,30}$/.test(normalized)) {
+                    throw new Error('Invalid format');
+                }
+                
+                return normalized;
+            }
+            
+            const normalized = normalizeHashtag(eventCode);
+            document.getElementById('output').innerHTML += `
+                <p><strong>Normalized:</strong> "${normalized}"</p>
+                <p><strong>Is valid:</strong> ${normalized.length >= 3 && normalized.length <= 30 && /^[a-z0-9_-]+$/.test(normalized)}</p>
+            `;
+        } catch (err) {
+            document.getElementById('output').innerHTML += `
+                <p><strong>Normalization error:</strong> ${err.message}</p>
+            `;
+        }
+        
+        function clearStorage() {
+            localStorage.removeItem('eventCode');
+            localStorage.removeItem('displayName');
+            location.reload();
+        }
+    </script>
+</body>
+</html>

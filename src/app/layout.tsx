@@ -4,6 +4,7 @@ import "./globals.css";
 import PWARegister from "@/components/PWARegister";
 import InstallPrompt from "@/components/InstallPrompt";
 import OfflineIndicator from "@/components/OfflineIndicator";
+import { ToastProvider } from "@/components/Toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,15 +47,17 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className="min-h-screen bg-neutral-50">
-          <div className="mx-auto max-w-screen-md px-4 py-8">
-            <div className="bg-white shadow-sm rounded-2xl p-4">
-              {children}
+        <ToastProvider>
+          <div className="min-h-screen bg-neutral-50">
+            <div className="mx-auto max-w-screen-md px-4 py-8">
+              <div className="bg-white shadow-sm rounded-2xl p-4">
+                {children}
+              </div>
             </div>
           </div>
-        </div>
-        <PWARegister />
-        <OfflineIndicator />
+          <PWARegister />
+          <OfflineIndicator />
+        </ToastProvider>
       </body>
     </html>
   );

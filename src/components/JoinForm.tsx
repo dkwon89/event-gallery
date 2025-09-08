@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { hashtagExists, normalizeHashtag, HashtagError } from '@/lib/hashtags';
 
 interface JoinFormProps {
   onJoin: () => void;
@@ -8,73 +9,108 @@ interface JoinFormProps {
 
 export default function JoinForm({ onJoin }: JoinFormProps) {
   const [eventCode, setEventCode] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleEventCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // If user is typing and value doesn't start with #, add it
+    if (value && !value.startsWith('#')) {
+      setEventCode('#' + value);
+    } else {
+      setEventCode(value);
+    }
+    
+    // Clear error when user starts typing
+    if (error) {
+      setError(null);
+    }
+  };
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!eventCode.trim() || !displayName.trim()) {
+    if (!eventCode.trim()) {
       return;
     }
 
     setIsSubmitting(true);
-    
-    // Save to localStorage
-    localStorage.setItem('eventCode', eventCode.trim());
-    localStorage.setItem('displayName', displayName.trim());
-    
-    // Signal parent to re-render
-    onJoin();
-    
-    setIsSubmitting(false);
+    setError(null);
+
+    try {
+      // Normalize the hashtag code
+      const normalizedCode = normalizeHashtag(eventCode.trim());
+      
+      // Check if the hashtag exists in the database
+      const exists = await hashtagExists(normalizedCode);
+      
+      if (!exists) {
+        setError('This Hashtag doesn\'t exist. Check the spelling or create it first.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Save normalized event code to localStorage
+      localStorage.setItem('eventCode', normalizedCode);
+      
+      // Signal parent to re-render
+      onJoin();
+      
+    } catch (err) {
+      console.error('Error checking hashtag:', err);
+      if (err instanceof HashtagError) {
+        setError(err.message);
+      } else {
+        setError('Unable to verify hashtag. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
 
   return (
     <div className="max-w-md mx-auto">
-      <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
-        Join Event Gallery
-      </h2>
-      
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="eventCode" className="block text-sm font-medium text-gray-700 mb-1">
-            Event Code
+            Enter the hashtag you want to join
           </label>
           <input
             type="text"
             id="eventCode"
             value={eventCode}
-            onChange={(e) => setEventCode(e.target.value)}
-            placeholder="Enter event code"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            onChange={handleEventCodeChange}
+            placeholder="Enter Hashtag"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black placeholder-gray-400"
+            style={{ color: '#000000' }}
+            autoCapitalize="off"
+            autoCorrect="off"
+            autoComplete="off"
+            spellCheck="false"
             required
           />
-        </div>
-        
-        <div>
-          <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">
-            Your Name
-          </label>
-          <input
-            type="text"
-            id="displayName"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Enter your name"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            required
-          />
+          <p className="mt-1 text-xs text-gray-500">
+            Only existing Hashtags can be joined.
+          </p>
         </div>
         
         <button
           type="submit"
-          disabled={isSubmitting || !eventCode.trim() || !displayName.trim()}
+          disabled={isSubmitting || !eventCode.trim()}
           className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isSubmitting ? 'Joining...' : 'Join Event'}
+          {isSubmitting ? 'Joining...' : 'Join Hashtag'}
         </button>
       </form>
+
+      {error && (
+        <div className="mt-4 bg-red-50 border border-red-200 rounded-md p-3">
+          <p className="text-red-700 text-sm text-center">{error}</p>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import NextImage from 'next/image';
 
 interface LightboxModalProps {
   open: boolean;
@@ -8,6 +9,10 @@ interface LightboxModalProps {
   fileType: 'image' | 'video';
   publicUrl: string;
   title?: string;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  hasPrevious?: boolean;
+  hasNext?: boolean;
 }
 
 export default function LightboxModal({ 
@@ -15,10 +20,16 @@ export default function LightboxModal({
   onClose, 
   fileType, 
   publicUrl, 
-  title 
+  title,
+  onPrevious,
+  onNext,
+  hasPrevious = false,
+  hasNext = false
 }: LightboxModalProps) {
   const [zoomed, setZoomed] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -52,6 +63,33 @@ export default function LightboxModal({
       document.removeEventListener('keydown', handleEscape);
     };
   }, [open, onClose]);
+
+  // Swipe detection
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && hasNext && onNext) {
+      onNext();
+    }
+    if (isRightSwipe && hasPrevious && onPrevious) {
+      onPrevious();
+    }
+  };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -110,17 +148,57 @@ export default function LightboxModal({
           Download
         </a>
 
+        {/* Navigation Buttons */}
+        {hasPrevious && onPrevious && (
+          <button
+            onClick={onPrevious}
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 text-white hover:text-gray-300 transition-colors bg-black/50 rounded-full p-3 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
+            aria-label="Previous"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
+
+        {hasNext && onNext && (
+          <button
+            onClick={onNext}
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 text-white hover:text-gray-300 transition-colors bg-black/50 rounded-full p-3 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
+            aria-label="Next"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
+
         {/* Media Content */}
-        <div className="relative">
+        <div 
+          className="relative"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
           {fileType === 'image' ? (
-            <img
-              src={publicUrl}
-              alt={title || 'image'}
-              onClick={handleImageClick}
-              className={`max-h-[80vh] max-w-full object-contain transition-transform duration-200 ${
+            <div 
+              className={`max-h-[80vh] max-w-full transition-transform duration-200 ${
                 zoomed ? 'scale-150 cursor-zoom-out' : 'scale-100 cursor-zoom-in'
               }`}
-            />
+              onClick={handleImageClick}
+            >
+              <NextImage
+                src={publicUrl}
+                alt={title || 'image'}
+                width={1200}
+                height={800}
+                className="object-contain max-h-[80vh] max-w-full"
+                quality={95}
+                priority
+                placeholder="blur"
+                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+              />
+            </div>
           ) : (
             <video
               src={publicUrl}
@@ -136,8 +214,8 @@ export default function LightboxModal({
         {/* Instructions */}
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm opacity-75 bg-black/50 px-3 py-1 rounded">
           {fileType === 'image' 
-            ? `Esc to close • Click image to ${zoomed ? 'zoom out' : 'zoom in'}`
-            : 'Esc to close • Use controls to play/pause'
+            ? `Esc to close • Click to ${zoomed ? 'zoom out' : 'zoom in'} • Swipe to navigate`
+            : 'Esc to close • Swipe to navigate • Use controls to play/pause'
           }
         </div>
       </div>

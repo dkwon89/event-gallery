@@ -47,7 +47,7 @@ export function clearCache(): void {
 }
 
 // Debounce utility
-export function createDebouncedFunction<T extends (...args: any[]) => any>(
+export function createDebouncedFunction<T extends (...args: unknown[]) => unknown>(
   func: T,
   delay: number
 ): T {

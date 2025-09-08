@@ -54,8 +54,31 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip Supabase media files - let them hit network
-  if (url.hostname.includes('supabase') || url.pathname.includes('/storage/')) {
+  // Handle Supabase media files with caching
+  if (url.hostname.includes('supabase') && url.pathname.includes('/storage/')) {
+    event.respondWith(
+      caches.open(CACHE_NAME)
+        .then((cache) => {
+          return cache.match(request)
+            .then((cachedResponse) => {
+              if (cachedResponse) {
+                console.log('[SW] Serving media from cache:', request.url);
+                return cachedResponse;
+              }
+              
+              return fetch(request)
+                .then((response) => {
+                  if (response && response.status === 200) {
+                    // Cache media files
+                    const responseClone = response.clone();
+                    cache.put(request, responseClone);
+                    console.log('[SW] Cached media file:', request.url);
+                  }
+                  return response;
+                });
+            });
+        })
+    );
     return;
   }
 
