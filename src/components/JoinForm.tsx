@@ -12,6 +12,7 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
   const [eventCode, setEventCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   const handleEventCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -40,6 +41,7 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
     console.log('Join form submitted with eventCode:', eventCode);
     setIsSubmitting(true);
     setError(null);
+    setDebugInfo('Starting join process...');
 
     try {
       // Check if we're in a browser environment
@@ -55,8 +57,11 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
       console.log('User agent:', navigator.userAgent);
       console.log('Online status:', navigator.onLine);
       
+      setDebugInfo(`Device: ${isMobile ? 'Mobile' : 'Desktop'}, Online: ${navigator.onLine}`);
+      
       // Test Supabase connection first
       console.log('Testing Supabase connection...');
+      setDebugInfo('Testing database connection...');
       try {
         const { data: testData, error: testError } = await supabase
           .from('hashtags')
@@ -65,6 +70,7 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
         
         if (testError) {
           console.error('Supabase connection test failed:', testError);
+          setDebugInfo(`Connection failed: ${testError.message}`);
           if (isMobile) {
             setError('Mobile connection issue. Please check your WiFi/cellular data and try again.');
           } else {
@@ -74,8 +80,10 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
           return;
         }
         console.log('Supabase connection test passed');
+        setDebugInfo('Database connection successful');
       } catch (connectionError) {
         console.error('Supabase connection error:', connectionError);
+        setDebugInfo(`Connection error: ${connectionError}`);
         if (isMobile) {
           setError('Mobile network error. Please check your connection and try again.');
         } else {
@@ -91,6 +99,7 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
       
       // Check if the hashtag exists in the database
       console.log('Checking if hashtag exists...');
+      setDebugInfo(`Checking hashtag: ${normalizedCode}`);
       
       // Add timeout for mobile devices (they can be slower)
       const timeoutPromise = new Promise((_, reject) => {
@@ -101,6 +110,7 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
       
       const exists = await Promise.race([hashtagCheckPromise, timeoutPromise]) as boolean;
       console.log('Hashtag exists:', exists);
+      setDebugInfo(`Hashtag check result: ${exists ? 'Found' : 'Not found'}`);
       
       if (!exists) {
         setError('This Hashtag doesn\'t exist. Check the spelling or create it first.');
@@ -110,10 +120,12 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
 
       // Save normalized event code to localStorage
       console.log('Saving to localStorage:', normalizedCode);
+      setDebugInfo('Saving to device storage...');
       localStorage.setItem('eventCode', normalizedCode);
       
       // Signal parent to re-render
       console.log('Calling onJoin()');
+      setDebugInfo('Success! Redirecting...');
       onJoin();
       
     } catch (err) {
@@ -183,6 +195,12 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
       {error && (
         <div className="mt-4 bg-red-50 border border-red-200 rounded-md p-3">
           <p className="text-red-700 text-sm text-center">{error}</p>
+        </div>
+      )}
+
+      {debugInfo && (
+        <div className="mt-4 bg-blue-50 border border-blue-200 rounded-md p-3">
+          <p className="text-blue-700 text-sm text-center font-mono">{debugInfo}</p>
         </div>
       )}
     </div>
