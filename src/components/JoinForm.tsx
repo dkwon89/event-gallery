@@ -36,15 +36,19 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
       return;
     }
 
+    console.log('Join form submitted with eventCode:', eventCode);
     setIsSubmitting(true);
     setError(null);
 
     try {
       // Normalize the hashtag code
       const normalizedCode = normalizeHashtag(eventCode.trim());
+      console.log('Normalized code:', normalizedCode);
       
       // Check if the hashtag exists in the database
+      console.log('Checking if hashtag exists...');
       const exists = await hashtagExists(normalizedCode);
+      console.log('Hashtag exists:', exists);
       
       if (!exists) {
         setError('This Hashtag doesn\'t exist. Check the spelling or create it first.');
@@ -53,9 +57,11 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
       }
 
       // Save normalized event code to localStorage
+      console.log('Saving to localStorage:', normalizedCode);
       localStorage.setItem('eventCode', normalizedCode);
       
       // Signal parent to re-render
+      console.log('Calling onJoin()');
       onJoin();
       
     } catch (err) {

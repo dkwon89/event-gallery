@@ -52,16 +52,29 @@ export default function Home() {
       return false;
     }
     
-    // Check if it starts with # and has some content after
-    if (!trimmed.startsWith('#') || trimmed.length < 2) {
-      console.log('validateEventCode: code does not start with # or too short:', code);
-      return false;
-    }
-    
-    // Basic character validation - allow most characters that could be in a hashtag
-    if (!/^#[a-zA-Z0-9_-]+$/.test(trimmed)) {
-      console.log('validateEventCode: code contains invalid characters:', code);
-      return false;
+    // Check if it starts with # and has some content after, or if it's a normalized hashtag without #
+    if (trimmed.startsWith('#')) {
+      // Original format with # - check it has content after #
+      if (trimmed.length < 2) {
+        console.log('validateEventCode: code with # is too short:', code);
+        return false;
+      }
+      // Basic character validation for # format
+      if (!/^#[a-zA-Z0-9_-]+$/.test(trimmed)) {
+        console.log('validateEventCode: code with # contains invalid characters:', code);
+        return false;
+      }
+    } else {
+      // Normalized format without # - check it's a valid normalized hashtag
+      if (trimmed.length < 3) {
+        console.log('validateEventCode: normalized code is too short:', code);
+        return false;
+      }
+      // Basic character validation for normalized format
+      if (!/^[a-zA-Z0-9_-]+$/.test(trimmed)) {
+        console.log('validateEventCode: normalized code contains invalid characters:', code);
+        return false;
+      }
     }
     
     console.log('validateEventCode: validation passed for:', code);
@@ -223,6 +236,15 @@ export default function Home() {
     const isValid = validateEventCode(storedEventCode);
     console.log('Event code validation result:', { storedEventCode, isValid });
     
+    // Debug step determination
+    console.log('Step determination:', {
+      hasEventCode: !!storedEventCode,
+      hasDisplayName: !!storedDisplayName,
+      isValid,
+      willSetStep: storedEventCode && storedDisplayName && isValid ? 'complete' : 
+                   storedEventCode && isValid ? 'name' : 'event'
+    });
+    
     // If validation fails, silently clear the corrupted data and start fresh
     if (storedEventCode && !isValid) {
       console.log('Clearing corrupted event code from localStorage and starting fresh');
@@ -242,10 +264,13 @@ export default function Home() {
       
       // Determine current step based on localStorage
       if (storedEventCode && storedDisplayName && isValid) {
+        // Both eventCode and displayName exist and are valid - user is fully set up
         setStep('complete');
       } else if (storedEventCode && isValid) {
+        // Only eventCode exists and is valid - user needs to enter name
         setStep('name');
       } else {
+        // No valid eventCode - start from beginning
         setStep('event');
       }
     }
@@ -256,14 +281,21 @@ export default function Home() {
   // Add global error handler for localStorage issues
   useEffect(() => {
     const handleStorageError = (e: StorageEvent) => {
-      console.error('Storage event error:', e);
+      // Handle storage events silently - only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Storage event detected:', e.key, e.newValue);
+      }
+      
       // If there's a storage error, clear the data and reset
       if (e.key === 'eventCode' || e.key === 'displayName') {
         try {
           localStorage.removeItem('eventCode');
           localStorage.removeItem('displayName');
         } catch (error) {
-          console.error('Error clearing localStorage after storage error:', error);
+          // Only log in development
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Error clearing localStorage after storage event:', error);
+          }
         }
         // No need to set validation state - handling silently
         setEventCode('');
@@ -285,15 +317,18 @@ export default function Home() {
   }, [eventCode]);
 
   const handleEventJoin = () => {
+    console.log('handleEventJoin called');
     // Re-read from localStorage after event form submission
     if (typeof window !== 'undefined') {
       try {
         const storedEventCode = localStorage.getItem('eventCode');
+        console.log('Stored event code from localStorage:', storedEventCode);
         setEventCode(storedEventCode);
       } catch (error) {
         console.error('Error reading from localStorage in handleEventJoin:', error);
       }
     }
+    console.log('Setting step to name');
     setStep('name');
   };
 

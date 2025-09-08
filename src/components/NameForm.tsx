@@ -34,21 +34,7 @@ export default function NameForm({ onComplete, onBack, eventCode }: NameFormProp
   };
 
   const handleBack = async () => {
-    // If there's an eventCode, delete the hashtag that was just created
-    if (eventCode) {
-      console.log('Attempting to delete hashtag:', eventCode);
-      try {
-        await deleteHashtag(eventCode);
-        console.log('Hashtag deleted successfully');
-        showToast('Hashtag deleted');
-      } catch (error) {
-        console.error('Error deleting hashtag:', error);
-        showToast(`Failed to delete hashtag: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
-      }
-    }
-    
-    // Clear localStorage
-    localStorage.removeItem('eventCode');
+    // Only clear the displayName, keep the eventCode (hashtag) intact
     localStorage.removeItem('displayName');
     
     // Call the parent's onBack function
@@ -70,10 +56,10 @@ export default function NameForm({ onComplete, onBack, eventCode }: NameFormProp
             placeholder="Enter your name"
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black placeholder-gray-400"
             style={{ color: '#000000' }}
-            autoCapitalize="off"
-            autoCorrect="off"
-            autoComplete="off"
-            spellCheck="false"
+            autoCapitalize="words"
+            autoCorrect="on"
+            autoComplete="name"
+            spellCheck="true"
             required
             autoFocus
           />
