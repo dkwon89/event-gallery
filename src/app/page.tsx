@@ -33,8 +33,14 @@ export default function Home() {
     }
     
     // Additional checks for common corruption issues
-    if (code === 'null' || code === 'undefined' || code === '') {
+    if (code === 'null' || code === 'undefined' || code === '' || code === 'NaN') {
       console.log('validateEventCode: invalid code value:', code);
+      return false;
+    }
+    
+    // Check if it's a string and has content
+    if (typeof code !== 'string' || code.trim().length === 0) {
+      console.log('validateEventCode: invalid code type or empty:', code);
       return false;
     }
     
@@ -181,9 +187,22 @@ export default function Home() {
   };
 
   useEffect(() => {
-    // Read from localStorage on client side
-    const storedEventCode = localStorage.getItem('eventCode');
-    const storedDisplayName = localStorage.getItem('displayName');
+    // Read from localStorage on client side with error handling
+    let storedEventCode: string | null = null;
+    let storedDisplayName: string | null = null;
+    
+    try {
+      storedEventCode = localStorage.getItem('eventCode');
+      storedDisplayName = localStorage.getItem('displayName');
+    } catch (error) {
+      console.error('Error reading from localStorage:', error);
+      // If localStorage is corrupted, clear it
+      try {
+        localStorage.clear();
+      } catch (clearError) {
+        console.error('Error clearing localStorage:', clearError);
+      }
+    }
     
     console.log('Loaded from localStorage:', { storedEventCode, storedDisplayName });
     
@@ -194,8 +213,12 @@ export default function Home() {
     // If validation fails, clear the corrupted data
     if (storedEventCode && !isValid) {
       console.log('Clearing corrupted event code from localStorage');
-      localStorage.removeItem('eventCode');
-      localStorage.removeItem('displayName');
+      try {
+        localStorage.removeItem('eventCode');
+        localStorage.removeItem('displayName');
+      } catch (error) {
+        console.error('Error clearing localStorage:', error);
+      }
       setIsValidEventCode(false);
       setEventCode('');
       setDisplayName('');
@@ -216,6 +239,32 @@ export default function Home() {
     }
     
     setIsLoading(false);
+  }, []);
+
+  // Add global error handler for localStorage issues
+  useEffect(() => {
+    const handleStorageError = (e: StorageEvent) => {
+      console.error('Storage event error:', e);
+      // If there's a storage error, clear the data and reset
+      if (e.key === 'eventCode' || e.key === 'displayName') {
+        try {
+          localStorage.removeItem('eventCode');
+          localStorage.removeItem('displayName');
+        } catch (error) {
+          console.error('Error clearing localStorage after storage error:', error);
+        }
+        setIsValidEventCode(false);
+        setEventCode('');
+        setDisplayName('');
+        setStep('event');
+      }
+    };
+
+    window.addEventListener('storage', handleStorageError);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageError);
+    };
   }, []);
 
   // Debug eventCode changes
@@ -388,12 +437,28 @@ export default function Home() {
             <p className="text-yellow-800 text-sm mb-3">
               The stored event code is invalid or corrupted.
             </p>
-            <button
-              onClick={handleSwitchEvent}
-              className="text-sm text-blue-600 hover:text-blue-800 underline"
-            >
-              Join a new event
-            </button>
+            <div className="space-y-2">
+              <button
+                onClick={handleSwitchEvent}
+                className="text-sm text-blue-600 hover:text-blue-800 underline block"
+              >
+                Join a new event
+              </button>
+              <button
+                onClick={() => {
+                  try {
+                    localStorage.clear();
+                    window.location.reload();
+                  } catch (error) {
+                    console.error('Error clearing localStorage:', error);
+                    window.location.reload();
+                  }
+                }}
+                className="text-sm text-red-600 hover:text-red-800 underline block"
+              >
+                Clear all data (Troubleshooting)
+              </button>
+            </div>
           </div>
         </div>
         <InstallPrompt />
