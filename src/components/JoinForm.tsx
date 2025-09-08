@@ -49,6 +49,12 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
         return;
       }
 
+      // Mobile-specific debugging
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      console.log('Device type:', isMobile ? 'Mobile' : 'Desktop');
+      console.log('User agent:', navigator.userAgent);
+      console.log('Online status:', navigator.onLine);
+      
       // Test Supabase connection first
       console.log('Testing Supabase connection...');
       try {
@@ -59,14 +65,22 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
         
         if (testError) {
           console.error('Supabase connection test failed:', testError);
-          setError('Unable to connect to the database. Please try again later.');
+          if (isMobile) {
+            setError('Mobile connection issue. Please check your WiFi/cellular data and try again.');
+          } else {
+            setError('Unable to connect to the database. Please try again later.');
+          }
           setIsSubmitting(false);
           return;
         }
         console.log('Supabase connection test passed');
       } catch (connectionError) {
         console.error('Supabase connection error:', connectionError);
-        setError('Unable to connect to the server. Please check your internet connection.');
+        if (isMobile) {
+          setError('Mobile network error. Please check your connection and try again.');
+        } else {
+          setError('Unable to connect to the server. Please check your internet connection.');
+        }
         setIsSubmitting(false);
         return;
       }
@@ -77,7 +91,15 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
       
       // Check if the hashtag exists in the database
       console.log('Checking if hashtag exists...');
-      const exists = await hashtagExists(normalizedCode);
+      
+      // Add timeout for mobile devices (they can be slower)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout')), isMobile ? 15000 : 10000);
+      });
+      
+      const hashtagCheckPromise = hashtagExists(normalizedCode);
+      
+      const exists = await Promise.race([hashtagCheckPromise, timeoutPromise]) as boolean;
       console.log('Hashtag exists:', exists);
       
       if (!exists) {
@@ -97,14 +119,20 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
     } catch (err) {
       console.error('Error checking hashtag:', err);
       
-      // More specific error handling
+      // More specific error handling with mobile considerations
       if (err instanceof HashtagError) {
         setError(err.message);
       } else if (err instanceof Error) {
-        if (err.message.includes('fetch')) {
-          setError('Network error. Please check your connection and try again.');
+        if (err.message.includes('Request timeout')) {
+          setError('Request timed out. Please check your connection and try again.');
+        } else if (err.message.includes('fetch')) {
+          setError('Network error. Please check your WiFi/cellular data and try again.');
         } else if (err.message.includes('Failed to fetch')) {
-          setError('Unable to connect to the server. Please try again.');
+          setError('Unable to connect to the server. Please check your internet connection.');
+        } else if (err.message.includes('NetworkError')) {
+          setError('Network error. Please check your connection and try again.');
+        } else if (err.message.includes('CORS')) {
+          setError('Connection blocked. Please try refreshing the page.');
         } else {
           setError(`Error: ${err.message}`);
         }
