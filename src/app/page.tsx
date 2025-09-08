@@ -16,7 +16,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [step, setStep] = useState<'event' | 'name' | 'complete'>('event');
   const [activeTab, setActiveTab] = useState<'create' | 'join'>('join');
-  const [isValidEventCode, setIsValidEventCode] = useState(true);
+  // isValidEventCode state removed - now handling validation silently
   
   // Create form state
   const [hashtag, setHashtag] = useState('');
@@ -44,15 +44,28 @@ export default function Home() {
       return false;
     }
     
-    try {
-      // Use the same normalization logic as the rest of the app
-      const normalized = normalizeHashtag(code);
-      console.log('validateEventCode: validation passed for:', code, 'normalized to:', normalized);
-      return true;
-    } catch (err) {
-      console.log('validateEventCode: validation failed for:', code, 'error:', err);
+    // More lenient validation for stored event codes
+    // Just check if it looks like a valid hashtag (starts with # and has content)
+    const trimmed = code.trim();
+    if (trimmed.length < 2) {
+      console.log('validateEventCode: code too short:', code);
       return false;
     }
+    
+    // Check if it starts with # and has some content after
+    if (!trimmed.startsWith('#') || trimmed.length < 2) {
+      console.log('validateEventCode: code does not start with # or too short:', code);
+      return false;
+    }
+    
+    // Basic character validation - allow most characters that could be in a hashtag
+    if (!/^#[a-zA-Z0-9_-]+$/.test(trimmed)) {
+      console.log('validateEventCode: code contains invalid characters:', code);
+      return false;
+    }
+    
+    console.log('validateEventCode: validation passed for:', code);
+    return true;
   };
 
   // Create form functions
@@ -210,21 +223,20 @@ export default function Home() {
     const isValid = validateEventCode(storedEventCode);
     console.log('Event code validation result:', { storedEventCode, isValid });
     
-    // If validation fails, clear the corrupted data
+    // If validation fails, silently clear the corrupted data and start fresh
     if (storedEventCode && !isValid) {
-      console.log('Clearing corrupted event code from localStorage');
+      console.log('Clearing corrupted event code from localStorage and starting fresh');
       try {
         localStorage.removeItem('eventCode');
         localStorage.removeItem('displayName');
       } catch (error) {
         console.error('Error clearing localStorage:', error);
       }
-      setIsValidEventCode(false);
+      // Don't show error - just start fresh
       setEventCode('');
       setDisplayName('');
       setStep('event');
     } else {
-      setIsValidEventCode(isValid);
       setEventCode(storedEventCode);
       setDisplayName(storedDisplayName);
       
@@ -253,7 +265,7 @@ export default function Home() {
         } catch (error) {
           console.error('Error clearing localStorage after storage error:', error);
         }
-        setIsValidEventCode(false);
+        // No need to set validation state - handling silently
         setEventCode('');
         setDisplayName('');
         setStep('event');
@@ -443,46 +455,8 @@ export default function Home() {
     );
   }
 
-  // Guard for invalid eventCode
-  if (step === 'complete' && !isValidEventCode) {
-    return (
-      <div className="text-center">
-        <div className="mb-6">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Welcome to Hashtag.
-          </h1>
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-md mx-auto">
-            <p className="text-yellow-800 text-sm mb-3">
-              The stored event code is invalid or corrupted.
-            </p>
-            <div className="space-y-2">
-              <button
-                onClick={handleSwitchEvent}
-                className="text-sm text-blue-600 hover:text-blue-800 underline block"
-              >
-                Join a new event
-              </button>
-              <button
-                onClick={() => {
-                  try {
-                    localStorage.clear();
-                    window.location.reload();
-                  } catch (error) {
-                    console.error('Error clearing localStorage:', error);
-                    window.location.reload();
-                  }
-                }}
-                className="text-sm text-red-600 hover:text-red-800 underline block"
-              >
-                Clear all data (Troubleshooting)
-              </button>
-            </div>
-          </div>
-        </div>
-        <InstallPrompt />
-      </div>
-    );
-  }
+  // Note: Invalid eventCode handling is now done silently in useEffect
+  // No need to show error messages to users
 
   // Complete step - show main app
   return (
