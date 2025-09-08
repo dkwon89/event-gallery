@@ -274,22 +274,40 @@ export default function Home() {
 
   const handleEventJoin = () => {
     // Re-read from localStorage after event form submission
-    const storedEventCode = localStorage.getItem('eventCode');
-    setEventCode(storedEventCode);
+    if (typeof window !== 'undefined') {
+      try {
+        const storedEventCode = localStorage.getItem('eventCode');
+        setEventCode(storedEventCode);
+      } catch (error) {
+        console.error('Error reading from localStorage in handleEventJoin:', error);
+      }
+    }
     setStep('name');
   };
 
   const handleEventCreate = () => {
     // Re-read from localStorage after event form submission
-    const storedEventCode = localStorage.getItem('eventCode');
-    setEventCode(storedEventCode);
+    if (typeof window !== 'undefined') {
+      try {
+        const storedEventCode = localStorage.getItem('eventCode');
+        setEventCode(storedEventCode);
+      } catch (error) {
+        console.error('Error reading from localStorage in handleEventCreate:', error);
+      }
+    }
     setStep('name');
   };
 
   const handleNameComplete = () => {
     // Re-read from localStorage after name form submission
-    const storedDisplayName = localStorage.getItem('displayName');
-    setDisplayName(storedDisplayName);
+    if (typeof window !== 'undefined') {
+      try {
+        const storedDisplayName = localStorage.getItem('displayName');
+        setDisplayName(storedDisplayName);
+      } catch (error) {
+        console.error('Error reading from localStorage in handleNameComplete:', error);
+      }
+    }
     setStep('complete');
   };
 
