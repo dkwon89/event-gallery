@@ -14,6 +14,8 @@ export default function UploaderAndGallery() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [configError, setConfigError] = useState<string | null>(null);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<Map<string, string>>(new Map()); // fileId -> filename
   const { showToast } = useToast();
 
   // Check for missing env vars
@@ -36,6 +38,122 @@ export default function UploaderAndGallery() {
     localStorage.removeItem('eventCode');
     localStorage.removeItem('displayName');
     window.location.reload();
+  };
+
+  const handleSelectMode = () => {
+    setIsSelectMode(!isSelectMode);
+    if (isSelectMode) {
+      setSelectedFiles(new Map());
+    }
+  };
+
+  const handleFileSelect = (fileId: string, fileName: string) => {
+    setSelectedFiles(prev => {
+      const newMap = new Map(prev);
+      if (newMap.has(fileId)) {
+        newMap.delete(fileId);
+      } else {
+        newMap.set(fileId, fileName);
+      }
+      return newMap;
+    });
+  };
+
+  const handleDownloadSelected = async () => {
+    if (selectedFiles.size === 0) return;
+
+    try {
+      const selectedFileNames: string[] = [];
+      
+      for (const [fileId, fileName] of selectedFiles) {
+        const filePath = `${eventCode}/${fileName}`;
+        
+        try {
+          // Try to create a signed URL first (more reliable for downloads)
+          const { data: signedData, error: signedError } = await supabase.storage
+            .from('media')
+            .createSignedUrl(filePath, 3600); // 1 hour expiry
+          
+          if (signedError) {
+            console.error('Signed URL failed, trying public URL:', signedError);
+            
+            // Fallback to public URL
+            const { data: publicData } = supabase.storage
+              .from('media')
+              .getPublicUrl(filePath);
+            
+            const downloadUrl = publicData.publicUrl;
+            
+            // Simple direct download approach
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = fileName;
+            link.target = '_blank';
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            selectedFileNames.push(fileName);
+            continue;
+          }
+          
+          // Use signed URL for better reliability
+          const downloadUrl = signedData.signedUrl;
+          
+          // Check if Web Share API is available (better for mobile)
+          if (navigator.share && navigator.canShare) {
+            try {
+              // Fetch the file for sharing
+              const response = await fetch(downloadUrl);
+              if (response.ok) {
+                const blob = await response.blob();
+                const file = new File([blob], fileName, { type: blob.type });
+                
+                if (navigator.canShare({ files: [file] })) {
+                  await navigator.share({
+                    files: [file],
+                    title: `Share ${fileName}`,
+                    text: `Downloaded from ${eventCode}`
+                  });
+                  selectedFileNames.push(fileName);
+                  continue;
+                }
+              }
+            } catch (shareError) {
+              console.log('Web Share API failed, falling back to download:', shareError);
+            }
+          }
+          
+          // Fallback: Direct download using signed URL
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = fileName;
+          link.target = '_blank';
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          selectedFileNames.push(fileName);
+          
+        } catch (error) {
+          console.error('Error downloading file:', fileName, error);
+          showToast(`Failed to download ${fileName}`, 'error');
+        }
+      }
+
+      if (selectedFileNames.length > 0) {
+        showToast(`Downloaded ${selectedFileNames.length} file${selectedFileNames.length > 1 ? 's' : ''} to your device`);
+        setSelectedFiles(new Map());
+        setIsSelectMode(false);
+      } else {
+        showToast('No files could be downloaded', 'error');
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      showToast('Failed to download files', 'error');
+    }
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,7 +276,7 @@ export default function UploaderAndGallery() {
   return (
     <div className="space-y-6">
       {/* Upload Section */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+      <div className="space-y-4">
         <div className="relative">
           <input
             id="file-upload"
@@ -178,8 +296,33 @@ export default function UploaderAndGallery() {
           </button>
         </div>
 
+        {/* Select and Download Buttons */}
+        <div className="flex space-x-3">
+          <button
+            onClick={handleSelectMode}
+            className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+              isSelectMode
+                ? 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
+                : 'bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-500'
+            }`}
+          >
+            {isSelectMode ? 'Cancel Select' : 'Select'}
+          </button>
+          <button
+            onClick={handleDownloadSelected}
+            disabled={selectedFiles.size === 0}
+            className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed ${
+              selectedFiles.size > 0
+                ? 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            Download ({selectedFiles.size})
+          </button>
+        </div>
+
         {uploadError && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
             <p className="text-red-700 text-sm">{uploadError}</p>
           </div>
         )}
@@ -187,7 +330,13 @@ export default function UploaderAndGallery() {
 
       {/* Gallery Section */}
       <div className="max-h-[70vh] overflow-y-auto">
-        <Gallery eventCode={eventCode} refreshKey={refreshKey} />
+        <Gallery 
+          eventCode={eventCode} 
+          refreshKey={refreshKey}
+          isSelectMode={isSelectMode}
+          selectedFiles={selectedFiles}
+          onFileSelect={handleFileSelect}
+        />
       </div>
     </div>
   );

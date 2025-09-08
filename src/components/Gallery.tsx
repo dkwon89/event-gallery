@@ -30,6 +30,9 @@ if (typeof document !== 'undefined') {
 interface GalleryProps {
   eventCode: string;
   refreshKey: number;
+  isSelectMode?: boolean;
+  selectedFiles?: Map<string, string>;
+  onFileSelect?: (fileId: string, fileName: string) => void;
 }
 
 interface FileObject {
@@ -39,7 +42,7 @@ interface FileObject {
   size?: number;
 }
 
-export default function Gallery({ eventCode, refreshKey }: GalleryProps) {
+export default function Gallery({ eventCode, refreshKey, isSelectMode = false, selectedFiles = new Map(), onFileSelect }: GalleryProps) {
   const [files, setFiles] = useState<FileObject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -310,6 +313,11 @@ export default function Gallery({ eventCode, refreshKey }: GalleryProps) {
   };
 
   const handleTileClick = (file: FileObject) => {
+    if (isSelectMode && onFileSelect) {
+      onFileSelect(file.id, file.name);
+      return;
+    }
+
     const fileType = getFileType(file.name);
     const publicUrl = getPublicUrl(file.name);
     
@@ -379,7 +387,7 @@ export default function Gallery({ eventCode, refreshKey }: GalleryProps) {
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
-              key={i}
+              key={`skeleton-${i}`}
               className="aspect-square bg-gray-200 rounded-xl animate-pulse relative overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse" 
@@ -427,10 +435,28 @@ export default function Gallery({ eventCode, refreshKey }: GalleryProps) {
           
           return (
             <div
-              key={file.id}
-              className="relative aspect-square bg-gray-100 rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 hover:ring-opacity-50 transition-all group shadow-sm"
+              key={`file-${file.id}`}
+              className={`relative aspect-square bg-gray-100 rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 hover:ring-opacity-50 transition-all group shadow-sm ${
+                isSelectMode && selectedFiles.has(file.id) ? 'ring-2 ring-blue-500' : ''
+              }`}
               onClick={() => handleTileClick(file)}
             >
+              {/* Selection Checkbox */}
+              {isSelectMode && (
+                <div className="absolute top-2 left-2 z-10">
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                    selectedFiles.has(file.id)
+                      ? 'bg-blue-600 border-blue-600'
+                      : 'bg-white border-gray-300'
+                  }`}>
+                    {selectedFiles.has(file.id) && (
+                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+              )}
               {fileType === 'image' ? (
                 <div className="relative aspect-square w-full h-full">
                   <NextImage

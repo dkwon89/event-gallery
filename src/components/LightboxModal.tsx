@@ -139,39 +139,6 @@ export default function LightboxModal({
           </svg>
         </button>
 
-        {/* Download Button */}
-        <a
-          href={publicUrl}
-          download={title || 'file'}
-          className="absolute top-4 right-16 z-10 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-        >
-          Download
-        </a>
-
-        {/* Navigation Buttons */}
-        {hasPrevious && onPrevious && (
-          <button
-            onClick={onPrevious}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 text-white hover:text-gray-300 transition-colors bg-black/50 rounded-full p-3 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
-            aria-label="Previous"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-        )}
-
-        {hasNext && onNext && (
-          <button
-            onClick={onNext}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 text-white hover:text-gray-300 transition-colors bg-black/50 rounded-full p-3 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
-            aria-label="Next"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        )}
 
         {/* Media Content */}
         <div 
@@ -213,13 +180,6 @@ export default function LightboxModal({
           )}
         </div>
 
-        {/* Instructions */}
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm opacity-75 bg-black/50 px-3 py-1 rounded">
-          {fileType === 'image' 
-            ? `Esc to close • Click to ${zoomed ? 'zoom out' : 'zoom in'} • Swipe to navigate`
-            : 'Esc to close • Swipe to navigate • Use controls to play/pause'
-          }
-        </div>
       </div>
     </div>
   );
