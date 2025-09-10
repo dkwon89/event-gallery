@@ -4,11 +4,13 @@ import { supabase } from './supabaseClient';
 export interface Hashtag {
   id: string;
   code: string;
+  pin: string;
   created_at: string;
 }
 
 export interface CreateHashtagResult {
   code: string;
+  pin: string;
 }
 
 export class HashtagError extends Error {
@@ -37,8 +39,10 @@ export function normalizeHashtag(code: string): string {
   // Convert to lowercase
   normalized = normalized.toLowerCase();
 
-  // Replace spaces with hyphens
-  normalized = normalized.replace(/\s+/g, '-');
+  // Check for spaces and throw error if found
+  if (/\s/.test(normalized)) {
+    throw new HashtagError('Hashtag cannot contain spaces', code);
+  }
 
   // Remove illegal characters except [a-z0-9_-]
   normalized = normalized.replace(/[^a-z0-9_-]/g, '');
@@ -99,20 +103,45 @@ export async function hashtagExists(code: string): Promise<boolean> {
 }
 
 /**
- * Creates a new hashtag in the database.
+ * Generates a random 4-digit PIN.
+ * 
+ * @returns string - A 4-digit PIN
+ */
+export function generatePin(): string {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
+/**
+ * Validates a 4-digit PIN.
+ * 
+ * @param pin - The PIN to validate
+ * @returns boolean - true if valid, false otherwise
+ */
+export function validatePin(pin: string): boolean {
+  return /^\d{4}$/.test(pin);
+}
+
+/**
+ * Creates a new hashtag in the database with a PIN.
  * 
  * @param code - The hashtag code to create
- * @returns Promise<CreateHashtagResult> - The created hashtag code
- * @throws HashtagError if the code is invalid or already taken
+ * @param pin - The 4-digit PIN for the hashtag
+ * @returns Promise<CreateHashtagResult> - The created hashtag code and PIN
+ * @throws HashtagError if the code is invalid, PIN is invalid, or already taken
  */
-export async function createHashtag(code: string): Promise<CreateHashtagResult> {
+export async function createHashtag(code: string, pin: string): Promise<CreateHashtagResult> {
   const normalized = normalizeHashtag(code);
+
+  // Validate PIN
+  if (!validatePin(pin)) {
+    throw new HashtagError('PIN must be exactly 4 digits', normalized);
+  }
 
   try {
     const { data, error } = await supabase
       .from('hashtags')
-      .insert({ code: normalized })
-      .select('code')
+      .insert({ code: normalized, pin: pin })
+      .select('code, pin')
       .single();
 
     if (error) {
@@ -129,7 +158,7 @@ export async function createHashtag(code: string): Promise<CreateHashtagResult> 
       throw new HashtagError('No data returned from hashtag creation', normalized);
     }
 
-    return { code: data.code };
+    return { code: data.code, pin: data.pin };
   } catch (err) {
     if (err instanceof HashtagError) {
       throw err;
@@ -137,6 +166,45 @@ export async function createHashtag(code: string): Promise<CreateHashtagResult> 
     
     console.error('Error creating hashtag:', err);
     throw new HashtagError('Failed to create hashtag', normalized);
+  }
+}
+
+/**
+ * Verifies a hashtag with its PIN.
+ * 
+ * @param code - The hashtag code to verify
+ * @param pin - The PIN to verify
+ * @returns Promise<boolean> - true if the hashtag exists and PIN matches, false otherwise
+ * @throws HashtagError if the code is invalid
+ */
+export async function verifyHashtagWithPin(code: string, pin: string): Promise<boolean> {
+  try {
+    const normalized = normalizeHashtag(code);
+    
+    if (!validatePin(pin)) {
+      return false;
+    }
+
+    console.log('verifyHashtagWithPin: checking for normalized code:', normalized, 'with PIN:', pin);
+
+    const { data, error } = await supabase
+      .from('hashtags')
+      .select('id, pin')
+      .eq('code', normalized)
+      .eq('pin', pin)
+      .limit(1);
+
+    if (error) {
+      console.error('Supabase error verifying hashtag with PIN:', error);
+      throw new Error(`Database error: ${error.message}`);
+    }
+
+    const isValid = data && data.length > 0;
+    console.log('verifyHashtagWithPin: result for', normalized, 'with PIN', pin, 'is', isValid);
+    return isValid;
+  } catch (err) {
+    console.error('Error verifying hashtag with PIN:', err);
+    throw err; // Re-throw to let the calling function handle it
   }
 }
 

@@ -1,20 +1,39 @@
 'use client';
 
-import { useState } from 'react';
-import { hashtagExists, normalizeHashtag, HashtagError } from '@/lib/hashtags';
+import React, { useState } from 'react';
+import { verifyHashtagWithPin, normalizeHashtag, validatePin, HashtagError } from '@/lib/hashtags';
 import { supabase } from '@/lib/supabaseClient';
 
 interface JoinFormProps {
   onJoin: () => void;
+  resetTrigger?: number; // Add reset trigger prop
 }
 
-export default function JoinForm({ onJoin }: JoinFormProps) {
+export default function JoinForm({ onJoin, resetTrigger }: JoinFormProps) {
   const [eventCode, setEventCode] = useState('');
+  const [pin, setPin] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPinStep, setShowPinStep] = useState(false);
+  const [pinAnimate, setPinAnimate] = useState(false);
+
+  // Reset form when resetTrigger changes
+  React.useEffect(() => {
+    if (resetTrigger !== undefined) {
+      setEventCode('');
+      setPin('');
+      setError(null);
+      setIsSubmitting(false);
+      setShowPinStep(false);
+      setPinAnimate(false);
+    }
+  }, [resetTrigger]);
 
   const handleEventCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+    let value = e.target.value;
+    
+    // Remove any spaces from the input
+    value = value.replace(/\s/g, '');
     
     // If user is typing and value doesn't start with #, add it
     if (value && !value.startsWith('#')) {
@@ -22,6 +41,23 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
     } else {
       setEventCode(value);
     }
+    
+    // Reset PIN step when hashtag changes
+    setShowPinStep(false);
+    setPinAnimate(false);
+    
+    // Clear error when user starts typing
+    if (error) {
+      setError(null);
+    }
+  };
+
+  const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // Only allow digits and limit to 4 characters
+    const digitsOnly = value.replace(/\D/g, '').slice(0, 4);
+    setPin(digitsOnly);
     
     // Clear error when user starts typing
     if (error) {
@@ -34,6 +70,24 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
     e.preventDefault();
     
     if (!eventCode.trim()) {
+      setError('Please enter a hashtag');
+      return;
+    }
+
+    // If PIN step is not shown yet, show it
+    if (!showPinStep) {
+      setShowPinStep(true);
+      setError(null);
+      // Trigger animation after a delay
+      setTimeout(() => {
+        setPinAnimate(true);
+      }, 100);
+      return;
+    }
+
+    // If PIN step is shown, proceed with joining
+    if (!pin || !validatePin(pin)) {
+      setError('Please enter a 4-digit PIN');
       return;
     }
 
@@ -89,21 +143,21 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
       const normalizedCode = normalizeHashtag(eventCode.trim());
       console.log('Normalized code:', normalizedCode);
       
-      // Check if the hashtag exists in the database
-      console.log('Checking if hashtag exists...');
+      // Verify the hashtag with PIN
+      console.log('Verifying hashtag with PIN...');
       
       // Add timeout for mobile devices (they can be slower)
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Request timeout')), isMobile ? 15000 : 10000);
       });
       
-      const hashtagCheckPromise = hashtagExists(normalizedCode);
+      const hashtagVerifyPromise = verifyHashtagWithPin(normalizedCode, pin);
       
-      const exists = await Promise.race([hashtagCheckPromise, timeoutPromise]) as boolean;
-      console.log('Hashtag exists:', exists);
+      const isValid = await Promise.race([hashtagVerifyPromise, timeoutPromise]) as boolean;
+      console.log('Hashtag verification result:', isValid);
       
-      if (!exists) {
-        setError('This Hashtag doesn\'t exist. Check the spelling or create it first.');
+      if (!isValid) {
+        setError('Invalid hashtag or PIN. Please check both and try again.');
         setIsSubmitting(false);
         return;
       }
@@ -146,11 +200,11 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
 
 
   return (
-    <div className="max-w-md mx-auto">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="card p-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label htmlFor="eventCode" className="block text-sm font-medium text-gray-700 mb-1">
-            Enter the hashtag you want to join
+          <label htmlFor="eventCode" className="block text-body-sm font-medium text-foreground mb-2">
+            Join Hashtag
           </label>
           <input
             type="text"
@@ -158,31 +212,52 @@ export default function JoinForm({ onJoin }: JoinFormProps) {
             value={eventCode}
             onChange={handleEventCodeChange}
             placeholder="Enter Hashtag"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black placeholder-gray-400"
-            style={{ color: '#000000' }}
+            className="input"
             autoCapitalize="off"
             autoCorrect="off"
             autoComplete="off"
             spellCheck="false"
             required
           />
-          <p className="mt-1 text-xs text-gray-500">
-            Only existing Hashtags can be joined.
-          </p>
         </div>
+
+        {showPinStep && (
+          <div className={`fade-in-slow ${pinAnimate ? 'animate' : ''}`}>
+            <label htmlFor="pin" className="block text-body-sm font-medium text-foreground mb-2">
+              Enter the 4-digit PIN
+            </label>
+            <input
+              type="text"
+              id="pin"
+              value={pin}
+              onChange={handlePinChange}
+              placeholder="Enter PIN"
+              maxLength={4}
+              className="input"
+              autoCapitalize="off"
+              autoCorrect="off"
+              autoComplete="off"
+              spellCheck="false"
+              required
+            />
+            <p className="mt-2 text-caption text-muted-foreground">
+              Ask the hashtag creator for the PIN.
+            </p>
+          </div>
+        )}
         
         <button
           type="submit"
-          disabled={isSubmitting || !eventCode.trim()}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isSubmitting || !eventCode.trim() || (showPinStep && (!pin || !validatePin(pin)))}
+          className="btn btn-primary w-full h-11"
         >
-          {isSubmitting ? 'Joining...' : 'Join Hashtag'}
+          {isSubmitting ? 'Joining...' : showPinStep ? 'Join Hashtag' : 'Continue'}
         </button>
       </form>
 
       {error && (
-        <div className="mt-4 bg-red-50 border border-red-200 rounded-md p-3">
-          <p className="text-red-700 text-sm text-center">{error}</p>
+        <div className="mt-4 bg-destructive/10 border border-destructive/20 rounded-md p-3">
+          <p className="text-destructive text-body-sm text-center">{error}</p>
         </div>
       )}
     </div>

@@ -121,7 +121,7 @@ export default function LightboxModal({
         <button
           ref={closeButtonRef}
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 transition-colors bg-black/50 rounded-full p-2 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
+          className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 transition-colors bg-black/50 rounded-full p-2 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 floating-hover"
           aria-label="Close"
         >
           <svg

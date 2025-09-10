@@ -40,6 +40,7 @@ interface FileObject {
   id: string;
   created_at: string;
   size?: number;
+  uploader_name?: string;
 }
 
 export default function Gallery({ eventCode, refreshKey, isSelectMode = false, selectedFiles = new Map(), onFileSelect }: GalleryProps) {
@@ -65,29 +66,34 @@ export default function Gallery({ eventCode, refreshKey, isSelectMode = false, s
         setError(null);
       }
 
-      // eventCode is already normalized, use it directly
-      const { data, error } = await supabase.storage
+      // Fetch from database to get metadata including uploader names
+      const { data: dbData, error: dbError } = await supabase
         .from('media')
-        .list(eventCode, { limit: 1000 });
+        .select('*')
+        .eq('event_code', eventCode)
+        .order('created_at', { ascending: false })
+        .limit(1000);
 
-      if (error) {
-        throw new Error(error.message);
+      if (dbError) {
+        throw new Error(dbError.message);
       }
 
-      // Sort by created_at (newest first) or by name as fallback
-      const sortedFiles = data?.sort((a, b) => {
-        if (a.created_at && b.created_at) {
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        }
-        return b.name.localeCompare(a.name);
-      }) || [];
+      // Convert database records to the format expected by the UI
+      const sortedFiles = (dbData || []).map(record => ({
+        name: record.filename,
+        id: record.id,
+        created_at: record.created_at,
+        size: record.file_size || 0,
+        uploader_name: record.uploader_name || 'Unknown'
+      }));
 
       // Update cache - map the files to ensure they have the required structure
       const mappedFiles = sortedFiles.map(file => ({
         name: file.name,
         id: file.id,
         created_at: file.created_at,
-        size: (file as FileObject & { size?: number }).size || 0
+        size: file.size,
+        uploader_name: file.uploader_name
       }));
       setCachedListing(eventCode, mappedFiles);
       
@@ -368,29 +374,20 @@ export default function Gallery({ eventCode, refreshKey, isSelectMode = false, s
     }
   };
 
-  const handleCopyLink = async (publicUrl: string) => {
-    try {
-      await navigator.clipboard.writeText(publicUrl);
-      showToast('Copied link!');
-    } catch (err) {
-      console.error('Failed to copy link:', err);
-      showToast('Failed to copy link', 'error');
-    }
-  };
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">
+      <div className="p-6 space-y-4">
+        <h3 className="text-h3 text-foreground">
           Gallery
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={`skeleton-${i}`}
-              className="aspect-square bg-gray-200 rounded-xl animate-pulse relative overflow-hidden"
+              className="aspect-square bg-muted rounded-xl animate-pulse relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse" 
+              <div className="absolute inset-0 bg-gradient-to-r from-muted via-muted-foreground/20 to-muted animate-pulse" 
                    style={{
                      background: 'linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%)',
                      backgroundSize: '200% 100%',
@@ -406,29 +403,38 @@ export default function Gallery({ eventCode, refreshKey, isSelectMode = false, s
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-700 text-sm">Error loading gallery: {error}</p>
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-700 text-sm">Error loading gallery: {error}</p>
+        </div>
       </div>
     );
   }
 
   if (files.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="text-6xl mb-4">📸</div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">No uploads yet</h3>
-        <p className="text-gray-500">Add some photos or videos!</p>
+      <div className="text-center py-16">
+        <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-muted to-muted-foreground/20 rounded-2xl flex items-center justify-center">
+          <div className="text-3xl">📸</div>
+        </div>
+        <h3 className="text-h2 text-foreground mb-3">No uploads yet</h3>
+        <p className="text-muted-foreground text-body-lg">Add some photos or videos to get started!</p>
+        <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-muted-foreground/30 to-transparent mx-auto mt-6"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-gray-900">
-        Gallery ({files.length} files)
-      </h3>
-      
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+    <div className="w-full">
+      <div className="space-y-6 py-6">
+        <div className="text-center px-4">
+          <h3 className="text-h2 text-foreground mb-2">
+            Gallery ({files.length} files)
+          </h3>
+          <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-muted-foreground/30 to-transparent mx-auto"></div>
+        </div>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 px-4">
         {files.map((file) => {
           const fileType = getFileType(file.name);
           const publicUrl = getPublicUrl(file.name);
@@ -436,8 +442,8 @@ export default function Gallery({ eventCode, refreshKey, isSelectMode = false, s
           return (
             <div
               key={`file-${file.id}`}
-              className={`relative aspect-square bg-gray-100 rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 hover:ring-opacity-50 transition-all group shadow-sm ${
-                isSelectMode && selectedFiles.has(file.id) ? 'ring-2 ring-blue-500' : ''
+              className={`relative aspect-square bg-white rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 group shadow-sm hover:shadow-lg hover:-translate-y-1 ${
+                isSelectMode && selectedFiles.has(file.id) ? 'ring-2 ring-primary shadow-lg -translate-y-1' : ''
               }`}
               onClick={() => handleTileClick(file)}
             >
@@ -446,8 +452,8 @@ export default function Gallery({ eventCode, refreshKey, isSelectMode = false, s
                 <div className="absolute top-2 left-2 z-10">
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                     selectedFiles.has(file.id)
-                      ? 'bg-blue-600 border-blue-600'
-                      : 'bg-white border-gray-300'
+                      ? 'bg-primary border-primary'
+                      : 'bg-background border-border'
                   }`}>
                     {selectedFiles.has(file.id) && (
                       <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -464,7 +470,7 @@ export default function Gallery({ eventCode, refreshKey, isSelectMode = false, s
                     alt={file.name}
                     fill
                     sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-                    className="object-cover rounded-xl"
+                    className="object-cover rounded-2xl"
                     loading="lazy"
                     quality={85}
                     placeholder="blur"
@@ -483,7 +489,7 @@ export default function Gallery({ eventCode, refreshKey, isSelectMode = false, s
                     src={publicUrl}
                     muted
                     playsInline
-                    className="aspect-square object-cover rounded-xl w-full h-full"
+                    className="aspect-square object-cover rounded-2xl w-full h-full"
                     preload="none"
                     controls={false}
                     autoPlay={false}
@@ -506,32 +512,25 @@ export default function Gallery({ eventCode, refreshKey, isSelectMode = false, s
                   </div>
                 </div>
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-200 rounded-xl">
-                  <span className="text-xs text-gray-500 truncate px-2">
+                <div className="w-full h-full flex items-center justify-center bg-muted rounded-2xl">
+                  <span className="text-xs text-muted-foreground truncate px-2">
                     {file.name}
                   </span>
                 </div>
               )}
               
-              {/* Copy Link Button */}
-              <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleCopyLink(publicUrl);
-                        }}
-                className="absolute top-2 right-2 bg-black/50 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
-                title="Copy link"
-                aria-label="Copy link"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-              </button>
+              {/* Uploader Name */}
+              {file.uploader_name && (
+                <div className="absolute bottom-3 left-3 bg-white/95 text-foreground text-xs px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm border border-white/20">
+                  {file.uploader_name}
+                </div>
+              )}
+
             </div>
           );
         })}
+        </div>
       </div>
-
 
       {/* Lightbox Modal */}
       <LightboxModal

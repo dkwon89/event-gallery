@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { v4 as uuidv4 } from 'uuid';
 import Gallery from './Gallery';
 import { useToast } from './Toast';
 import { normalizeHashtag } from '@/lib/hashtags';
@@ -11,6 +10,7 @@ export default function UploaderAndGallery() {
   const [eventCode, setEventCode] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [configError, setConfigError] = useState<string | null>(null);
@@ -161,38 +161,64 @@ export default function UploaderAndGallery() {
     if (!files || files.length === 0) return;
 
     setIsUploading(true);
+    setUploadProgress(0);
     setUploadError(null);
 
     try {
-      const uploadPromises = Array.from(files).map(async (file) => {
-        // Get file extension
-        const fileExtension = file.name.split('.').pop() || '';
-        
-        // Create a safe filename using only UUID and extension
-        const safeFileName = `${uuidv4()}.${fileExtension}`;
+      const fileArray = Array.from(files);
+      let completedFiles = 0;
+
+      const uploadPromises = fileArray.map(async (file) => {
+        // Keep original filename but sanitize it for safe storage
+        const originalName = file.name;
+        const sanitizedFileName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
         
         // eventCode is already normalized, use it directly
-        const filePath = `${eventCode}/${safeFileName}`;
+        const filePath = `${eventCode}/${sanitizedFileName}`;
 
-        const { error } = await supabase.storage
+        // Upload file to storage
+        const { error: storageError } = await supabase.storage
           .from('media')
           .upload(filePath, file, {
             contentType: file.type,
             upsert: false
           });
 
-        if (error) {
+        if (storageError) {
           // Safely extract error message
           let errorMsg = 'Unknown error';
           try {
-            errorMsg = error.message || 'Unknown error';
+            errorMsg = storageError.message || 'Unknown error';
           } catch {
             errorMsg = 'Failed to get error message';
           }
           throw new Error(`Failed to upload ${file.name}: ${errorMsg}`);
         }
 
-        return safeFileName;
+        // Save metadata to database
+        const { error: dbError } = await supabase
+          .from('media')
+          .insert({
+            filename: sanitizedFileName,
+            file_path: filePath,
+            file_size: file.size,
+            mime_type: file.type,
+            uploader_name: displayName || 'Unknown',
+            event_code: eventCode
+          });
+
+        if (dbError) {
+          console.error('Database error:', dbError);
+          // Don't throw error here - file was uploaded successfully
+          // Just log the error and continue
+        }
+
+        // Update progress
+        completedFiles++;
+        const progress = Math.round((completedFiles / fileArray.length) * 100);
+        setUploadProgress(progress);
+
+        return sanitizedFileName;
       });
 
       await Promise.all(uploadPromises);
@@ -226,12 +252,13 @@ export default function UploaderAndGallery() {
       showToast(errorMessage, 'error');
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
   if (configError) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+      <div className="card-floating p-4 border-red-200 bg-red-50">
         <h3 className="text-red-800 font-semibold mb-2">Configuration Error</h3>
         <p className="text-red-700 text-sm">{configError}</p>
       </div>
@@ -240,11 +267,11 @@ export default function UploaderAndGallery() {
 
   if (!eventCode || !displayName) {
     return (
-      <div className="text-center text-gray-600">
-        <p className="mb-2">Missing event information.</p>
+      <div className="card-floating p-6 text-center">
+        <p className="mb-2 text-muted-foreground">Missing event information.</p>
         <button
           onClick={handleSwitchEvent}
-          className="text-blue-600 hover:text-blue-800 underline text-sm"
+          className="btn-ghost text-primary hover:text-primary/80"
         >
           Switch Event
         </button>
@@ -257,14 +284,14 @@ export default function UploaderAndGallery() {
     normalizeHashtag(eventCode);
   } catch {
     return (
-      <div className="text-center text-gray-600">
+      <div className="card-floating p-6 text-center">
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-md mx-auto mb-4">
           <p className="text-yellow-800 text-sm mb-3">
             The stored event code is invalid or corrupted.
           </p>
           <button
             onClick={handleSwitchEvent}
-            className="text-sm text-blue-600 hover:text-blue-800 underline"
+            className="btn-ghost text-primary hover:text-primary/80"
           >
             Join a new event
           </button>
@@ -274,69 +301,91 @@ export default function UploaderAndGallery() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Upload Section */}
-      <div className="space-y-4">
-        <div className="relative">
-          <input
-            id="file-upload"
-            type="file"
-            multiple
-            accept="image/*,video/*"
-            onChange={handleFileUpload}
-            disabled={isUploading}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-          />
-          <button
-            type="button"
-            disabled={isUploading}
-            className="w-full h-11 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed"
-          >
-            {isUploading ? 'Uploading…' : 'Upload Photos & Videos'}
-          </button>
-        </div>
+    <div className="w-full">
+      <div className="space-y-6">
+        {/* Upload Section - Centered */}
+        <div className="max-w-md mx-auto px-4 py-6">
+          <div className="space-y-4">
+            <div className="relative">
+              <input
+                id="file-upload"
+                type="file"
+                multiple
+                accept="image/*,video/*"
+                onChange={handleFileUpload}
+                disabled={isUploading}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+              />
+              <button
+                type="button"
+                disabled={isUploading}
+                className="btn btn-primary w-full h-11 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
+              >
+                {/* Progress bar background */}
+                {isUploading && (
+                  <div 
+                    className="absolute inset-0 bg-white/20 transition-all duration-300 ease-out"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                )}
+                
+                {/* Button content */}
+                <div className="relative z-10">
+                  {isUploading ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Uploading {uploadProgress}%</span>
+                    </div>
+                  ) : (
+                    'Upload Photos & Videos'
+                  )}
+                </div>
+              </button>
+            </div>
 
-        {/* Select and Download Buttons */}
-        <div className="flex space-x-3">
-          <button
-            onClick={handleSelectMode}
-            className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-              isSelectMode
-                ? 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
-                : 'bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-500'
-            }`}
-          >
-            {isSelectMode ? 'Cancel Select' : 'Select'}
-          </button>
-          <button
-            onClick={handleDownloadSelected}
-            disabled={selectedFiles.size === 0}
-            className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed ${
-              selectedFiles.size > 0
-                ? 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
-          >
-            Download ({selectedFiles.size})
-          </button>
-        </div>
+            {/* Select and Download Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={handleSelectMode}
+                className={`flex-1 btn h-11 ${
+                  isSelectMode
+                    ? 'btn-primary'
+                    : 'btn-secondary'
+                }`}
+              >
+                {isSelectMode ? 'Cancel Select' : 'Select'}
+              </button>
+              <button
+                onClick={handleDownloadSelected}
+                disabled={selectedFiles.size === 0}
+                className={`flex-1 btn h-11 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  selectedFiles.size > 0
+                    ? 'btn-primary'
+                    : 'btn-ghost'
+                }`}
+              >
+                Download ({selectedFiles.size})
+              </button>
+            </div>
 
-        {uploadError && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-            <p className="text-red-700 text-sm">{uploadError}</p>
+            {uploadError && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
+                <p className="text-destructive text-body-sm text-center">{uploadError}</p>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* Gallery Section */}
-      <div className="max-h-[70vh] overflow-y-auto">
-        <Gallery 
-          eventCode={eventCode} 
-          refreshKey={refreshKey}
-          isSelectMode={isSelectMode}
-          selectedFiles={selectedFiles}
-          onFileSelect={handleFileSelect}
-        />
+        {/* Gallery Section - Full Width */}
+        <div className="w-full">
+          <Gallery 
+            eventCode={eventCode} 
+            refreshKey={refreshKey}
+            isSelectMode={isSelectMode}
+            selectedFiles={selectedFiles}
+            onFileSelect={handleFileSelect}
+          />
+        </div>
       </div>
     </div>
   );

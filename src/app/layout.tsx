@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import PWARegister from "@/components/PWARegister";
@@ -20,13 +20,19 @@ export const metadata: Metadata = {
   title: "Event Gallery",
   description: "Event photo gallery with Supabase storage",
   manifest: "/manifest.json",
-  themeColor: "#111827",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Gallery",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#111827",
 };
 
 export default function RootLayout({
@@ -50,8 +56,8 @@ export default function RootLayout({
       >
         <ToastProvider>
           <div className="min-h-screen bg-neutral-50">
-            <div className="mx-auto max-w-screen-md px-4 py-8">
-              <div className="bg-white shadow-sm rounded-2xl p-4">
+            <div className="w-full px-2 py-4">
+              <div className="bg-white shadow-lg rounded-2xl p-6 min-h-screen">
                 {children}
               </div>
             </div>
