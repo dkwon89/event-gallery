@@ -6,7 +6,6 @@ import NameForm from '@/components/NameForm';
 import UploaderAndGallery from '@/components/UploaderAndGallery';
 import InstallPrompt from '@/components/InstallPrompt';
 import ConfigError from '@/components/ConfigError';
-import AuthSelectionScreen from '@/components/AuthSelectionScreen';
 import SignUpScreen from '@/components/SignUpScreen';
 import SignInScreen from '@/components/SignInScreen';
 import { normalizeHashtag, createHashtag, hashtagExists, validatePin, HashtagError } from '@/lib/hashtags';
@@ -55,60 +54,6 @@ export default function Home() {
     smoothScrollToTop();
   }, [authMode]);
 
-  const validateEventCode = (code: string | null): boolean => {
-    if (!code) {
-      console.log('validateEventCode: no code provided');
-      return false;
-    }
-    
-    // Additional checks for common corruption issues
-    if (code === 'null' || code === 'undefined' || code === '' || code === 'NaN') {
-      console.log('validateEventCode: invalid code value:', code);
-      return false;
-    }
-    
-    // Check if it's a string and has content
-    if (typeof code !== 'string' || code.trim().length === 0) {
-      console.log('validateEventCode: invalid code type or empty:', code);
-      return false;
-    }
-    
-    // More lenient validation for stored event codes
-    // Just check if it looks like a valid hashtag (starts with # and has content)
-    const trimmed = code.trim();
-    if (trimmed.length < 2) {
-      console.log('validateEventCode: code too short:', code);
-      return false;
-    }
-    
-    // Check if it starts with # and has some content after, or if it's a normalized hashtag without #
-    if (trimmed.startsWith('#')) {
-      // Original format with # - check it has content after #
-      if (trimmed.length < 2) {
-        console.log('validateEventCode: code with # is too short:', code);
-        return false;
-      }
-      // Basic character validation for # format
-      if (!/^#[a-zA-Z0-9_-]+$/.test(trimmed)) {
-        console.log('validateEventCode: code with # contains invalid characters:', code);
-        return false;
-      }
-    } else {
-      // Normalized format without # - check it's a valid normalized hashtag
-      if (trimmed.length < 3) {
-        console.log('validateEventCode: normalized code is too short:', code);
-        return false;
-      }
-      // Basic character validation for normalized format
-      if (!/^[a-zA-Z0-9_-]+$/.test(trimmed)) {
-        console.log('validateEventCode: normalized code contains invalid characters:', code);
-        return false;
-      }
-    }
-    
-    console.log('validateEventCode: validation passed for:', code);
-    return true;
-  };
 
   // Create form functions
   const updateNormalized = useCallback((input: string) => {

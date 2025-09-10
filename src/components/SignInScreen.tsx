@@ -9,10 +9,9 @@ interface SignInScreenProps {
   onSignInSuccess: (userId: string) => void;
   onBackToAuth: () => void;
   onSwitchToSignUp: () => void;
-  onToggleMenu?: () => void;
 }
 
-export default function SignInScreen({ onSignInSuccess, onBackToAuth, onSwitchToSignUp, onToggleMenu }: SignInScreenProps) {
+export default function SignInScreen({ onSignInSuccess, onBackToAuth, onSwitchToSignUp }: SignInScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -49,16 +48,19 @@ export default function SignInScreen({ onSignInSuccess, onBackToAuth, onSwitchTo
         showToast('Welcome back!');
         onSignInSuccess(data.user.id);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Sign in error:', err);
       let errorMessage = 'Failed to sign in. Please try again.';
       
-      if (err.message?.includes('Invalid login credentials')) {
-        errorMessage = 'Invalid email or password. Please try again.';
-      } else if (err.message?.includes('Email not confirmed')) {
-        errorMessage = 'Please check your email and click the confirmation link before signing in.';
-      } else if (err.message) {
-        errorMessage = err.message;
+      if (err && typeof err === 'object' && 'message' in err) {
+        const error = err as { message: string };
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password. Please try again.';
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Please check your email and click the confirmation link before signing in.';
+        } else {
+          errorMessage = error.message;
+        }
       }
       
       setError(errorMessage);
@@ -197,7 +199,7 @@ export default function SignInScreen({ onSignInSuccess, onBackToAuth, onSwitchTo
 
         <div className="mt-6 text-center">
           <p className="text-body-sm text-muted-foreground">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <button
               onClick={onSwitchToSignUp}
               className="text-primary hover:text-primary/80 font-medium"

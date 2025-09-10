@@ -65,7 +65,7 @@ export default function UploaderAndGallery() {
     try {
       const selectedFileNames: string[] = [];
       
-      for (const [fileId, fileName] of selectedFiles) {
+      for (const [, fileName] of selectedFiles) {
         const filePath = `${eventCode}/${fileName}`;
         
         try {

@@ -112,7 +112,7 @@ export default function JoinForm({ onJoin, resetTrigger }: JoinFormProps) {
       // Test Supabase connection first
       console.log('Testing Supabase connection...');
       try {
-        const { data: testData, error: testError } = await supabase
+        const { error: testError } = await supabase
           .from('hashtags')
           .select('count')
           .limit(1);

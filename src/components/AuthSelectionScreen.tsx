@@ -57,7 +57,7 @@ export default function AuthSelectionScreen({ onProceedAsGuest, onSignUp, onSign
 
         <div className="mt-8 text-caption text-muted-foreground">
           <p className="mb-2 font-semibold">With an account:</p>
-          <p>• Keep track of all hashtags you've joined</p>
+          <p>• Keep track of all hashtags you&apos;ve joined</p>
           <p>• Access your history across devices</p>
           <p>• Manage your uploaded content</p>
         </div>

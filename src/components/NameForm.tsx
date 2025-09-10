@@ -1,8 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { deleteHashtag } from '@/lib/hashtags';
-import { useToast } from './Toast';
 
 interface NameFormProps {
   onComplete: () => void;
@@ -10,10 +8,9 @@ interface NameFormProps {
   eventCode?: string | null;
 }
 
-export default function NameForm({ onComplete, onBack, eventCode }: NameFormProps) {
+export default function NameForm({ onComplete, onBack }: NameFormProps) {
   const [displayName, setDisplayName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { showToast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +43,7 @@ export default function NameForm({ onComplete, onBack, eventCode }: NameFormProp
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="displayName" className="block text-body-sm font-medium text-foreground mb-2">
-            What's your name?
+            What&apos;s your name?
           </label>
           <input
             type="text"

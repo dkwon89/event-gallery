@@ -202,6 +202,29 @@ export default function Gallery({ eventCode, refreshKey, isSelectMode = false, s
     };
   }, [loadedImages]);
 
+  const getFileType = (fileName: string): 'image' | 'video' | 'other' => {
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    
+    if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(extension || '')) {
+      return 'image';
+    }
+    
+    if (['mp4', 'mov', 'webm'].includes(extension || '')) {
+      return 'video';
+    }
+    
+    return 'other';
+  };
+
+  const getPublicUrl = useCallback((fileName: string) => {
+    // eventCode is already normalized, use it directly
+    const { data } = supabase.storage
+      .from('media')
+      .getPublicUrl(`${eventCode}/${fileName}`);
+    
+    return data.publicUrl;
+  }, [eventCode]);
+
   // Preload first few images for better perceived performance
   useEffect(() => {
     if (files.length > 0) {
@@ -220,7 +243,7 @@ export default function Gallery({ eventCode, refreshKey, isSelectMode = false, s
         }
       });
     }
-  }, [files, loadedImages]);
+  }, [files, loadedImages, getPublicUrl]);
 
   // Generate video posters for video files
   useEffect(() => {
@@ -242,7 +265,7 @@ export default function Gallery({ eventCode, refreshKey, isSelectMode = false, s
         }
       });
     }
-  }, [files, videoPosters]);
+  }, [files, videoPosters, getPublicUrl]);
 
   // Cleanup intervals on unmount
   useEffect(() => {
@@ -250,29 +273,6 @@ export default function Gallery({ eventCode, refreshKey, isSelectMode = false, s
       stopEmptyGalleryRevalidation(eventCode);
     };
   }, [eventCode]);
-
-  const getFileType = (fileName: string): 'image' | 'video' | 'other' => {
-    const extension = fileName.split('.').pop()?.toLowerCase();
-    
-    if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(extension || '')) {
-      return 'image';
-    }
-    
-    if (['mp4', 'mov', 'webm'].includes(extension || '')) {
-      return 'video';
-    }
-    
-    return 'other';
-  };
-
-  const getPublicUrl = (fileName: string) => {
-    // eventCode is already normalized, use it directly
-    const { data } = supabase.storage
-      .from('media')
-      .getPublicUrl(`${eventCode}/${fileName}`);
-    
-    return data.publicUrl;
-  };
 
   const generateVideoPoster = (videoUrl: string): Promise<string> => {
     return new Promise((resolve, reject) => {

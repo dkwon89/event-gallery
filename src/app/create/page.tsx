@@ -3,12 +3,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createHashtag, hashtagExists, normalizeHashtag, HashtagError } from '@/lib/hashtags';
+import { createHashtag, hashtagExists, normalizeHashtag, validatePin, HashtagError } from '@/lib/hashtags';
 import { useToast } from '@/components/Toast';
 
 export default function CreatePage() {
   const [hashtag, setHashtag] = useState('');
   const [normalized, setNormalized] = useState('');
+  const [pin, setPin] = useState('');
   const [availability, setAvailability] = useState<'checking' | 'available' | 'taken' | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,6 +87,11 @@ export default function CreatePage() {
       return;
     }
 
+    if (!pin || !validatePin(pin)) {
+      setError('Please enter a valid 4-digit PIN');
+      return;
+    }
+
     if (availability === 'taken') {
       setError('Already taken');
       return;
@@ -95,7 +101,7 @@ export default function CreatePage() {
     setError(null);
 
     try {
-      const result = await createHashtag(normalized);
+      const result = await createHashtag(normalized, pin);
       setCreatedCode(result.code);
       setShowSuccess(true);
       showToast('Hashtag created successfully!');
@@ -224,9 +230,25 @@ export default function CreatePage() {
           )}
         </div>
 
+        <div>
+          <label htmlFor="pin" className="block text-sm font-medium text-gray-700 mb-1">
+            PIN (4 digits)
+          </label>
+          <input
+            type="text"
+            id="pin"
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
+            placeholder="1234"
+            maxLength={4}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            required
+          />
+        </div>
+
         <button
           type="submit"
-          disabled={isCreating || !normalized || availability === 'taken' || availability === 'checking'}
+          disabled={isCreating || !normalized || !pin || !validatePin(pin) || availability === 'taken' || availability === 'checking'}
           className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isCreating ? 'Creating...' : 'Create Hashtag'}

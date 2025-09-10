@@ -103,24 +103,27 @@ export default function SignUpScreen({ onSignUpSuccess, onBackToAuth }: SignUpSc
         console.log('No user data returned from auth signup');
         setError('Account creation failed - no user data returned');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Sign up error:', err);
       let errorMessage = 'Failed to create account. Please try again.';
       
-      if (err.message?.includes('already registered') || err.message?.includes('already been registered')) {
-        errorMessage = 'An account with this email already exists. Please sign in instead.';
-      } else if (err.message?.includes('Invalid email') || err.message?.includes('email address') && err.message?.includes('invalid')) {
-        errorMessage = 'Please enter a valid email address. Make sure it contains @ and a valid domain.';
-      } else if (err.message?.includes('Password should be at least')) {
-        errorMessage = 'Password must be at least 6 characters long.';
-      } else if (err.message?.includes('User already registered')) {
-        errorMessage = 'An account with this email already exists. Please sign in instead.';
-      } else if (err.message?.includes('Signup is disabled')) {
-        errorMessage = 'Account creation is currently disabled. Please contact support.';
-      } else if (err.message?.includes('Email not confirmed')) {
-        errorMessage = 'Please check your email and click the confirmation link before signing in.';
-      } else if (err.message) {
-        errorMessage = err.message;
+      if (err && typeof err === 'object' && 'message' in err) {
+        const error = err as { message: string };
+        if (error.message.includes('already registered') || error.message.includes('already been registered')) {
+          errorMessage = 'An account with this email already exists. Please sign in instead.';
+        } else if (error.message.includes('Invalid email') || (error.message.includes('email address') && error.message.includes('invalid'))) {
+          errorMessage = 'Please enter a valid email address. Make sure it contains @ and a valid domain.';
+        } else if (error.message.includes('Password should be at least')) {
+          errorMessage = 'Password must be at least 6 characters long.';
+        } else if (error.message.includes('User already registered')) {
+          errorMessage = 'An account with this email already exists. Please sign in instead.';
+        } else if (error.message.includes('Signup is disabled')) {
+          errorMessage = 'Account creation is currently disabled. Please contact support.';
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Please check your email and click the confirmation link before signing in.';
+        } else {
+          errorMessage = error.message;
+        }
       }
       
       setError(errorMessage);
