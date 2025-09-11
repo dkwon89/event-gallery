@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import NextImage from 'next/image';
 
 interface LightboxModalProps {
@@ -254,7 +254,7 @@ export default function LightboxModal({
                   transform: `scale(${scale}) translate(${panX}px, ${panY}px)`,
                   transformOrigin: 'center center'
                 }}
-                onClick={(e) => {
+                onClick={(_e) => {
                   // Only toggle controls if not zoomed in and not panning
                   if (scale === 1 && !isPanning) {
                     setShowControls(!showControls);
@@ -324,7 +324,7 @@ export default function LightboxModal({
                 preload="metadata"
                 className="rounded"
                 style={{ width: '100vw', height: '100vh', objectFit: 'contain' }}
-                onClick={(e) => {
+                onClick={(_e) => {
                   // Only toggle controls if not zoomed in and not panning
                   if (scale === 1 && !isPanning) {
                     setShowControls(!showControls);

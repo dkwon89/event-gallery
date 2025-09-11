@@ -16,8 +16,8 @@ export default function Home() {
   const [eventCode, setEventCode] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [authMode, setAuthMode] = useState<'initial' | 'signup' | 'signin' | 'guest' | 'authenticated'>('signin');
-  const [userId, setUserId] = useState<string | null>(null);
+  const [authMode, setAuthMode] = useState<'initial' | 'signup' | 'signin' | 'guest' | 'authenticated' | 'unauthenticated'>('signin');
+  // const [userId, setUserId] = useState<string | null>(null);
   const [step, setStep] = useState<'event' | 'name' | 'complete'>('event');
   const [activeTab, setActiveTab] = useState<'create' | 'join'>('create');
   const [resetTrigger, setResetTrigger] = useState(0);
