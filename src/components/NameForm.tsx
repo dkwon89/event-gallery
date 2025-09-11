@@ -49,9 +49,9 @@ export default function NameForm({ onComplete, onBack, eventCode }: NameFormProp
           className="cursor-pointer hover:opacity-80 transition-opacity"
         >
           <img 
-            src="/hashtag logo.png" 
+            src="/hashtag logo text.png" 
             alt="Hashtag Logo" 
-            className="h-[33px] w-[33px] object-contain"
+            className="h-[33px] object-contain"
           />
         </button>
       </div>

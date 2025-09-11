@@ -244,7 +244,7 @@ export default function Home() {
         console.log('Restoring state from localStorage:', { storedEventCode, storedDisplayName });
         
         if (storedEventCode && storedDisplayName) {
-          // User has both event and name - go to complete step
+          // User has both event and name - go to complete step (gallery)
           setEventCode(storedEventCode);
           setDisplayName(storedDisplayName);
           setStep('complete');
@@ -565,17 +565,8 @@ export default function Home() {
         <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
           isMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}>
-          {/* Logo Area - Fixed Height */}
-          <div className="h-20 flex items-center px-6">
-            <img 
-              src="/hashtag logo text.png" 
-              alt="Hashtag Logo" 
-              className="h-[30px]"
-            />
-          </div>
-          
           {/* Menu Items */}
-          <div className="px-6 space-y-4">
+          <div className="px-6 pt-6 space-y-4">
             <button
               onClick={() => {
                 handleSignIn();
@@ -599,9 +590,9 @@ export default function Home() {
             className="cursor-pointer hover:opacity-80 transition-opacity"
           >
             <img 
-              src="/hashtag logo.png" 
+              src="/hashtag logo text.png" 
               alt="Hashtag Logo" 
-              className="h-[33px] w-[33px] object-contain"
+              className="h-[33px] object-contain"
             />
           </button>
         </div>
@@ -765,17 +756,8 @@ export default function Home() {
         <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
           isMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}>
-          {/* Logo Area - Fixed Height */}
-          <div className="h-20 flex items-center px-6">
-            <img 
-              src="/hashtag logo text.png" 
-              alt="Hashtag Logo" 
-              className="h-[30px]"
-            />
-          </div>
-          
           {/* Menu Items */}
-          <div className="px-6 space-y-4">
+          <div className="px-6 pt-6 space-y-4">
             <button
               onClick={() => {
                 handleSignIn();
@@ -828,17 +810,8 @@ export default function Home() {
       <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
         isMenuOpen ? 'translate-x-0' : 'translate-x-full'
       }`}>
-        {/* Logo Area - Fixed Height */}
-        <div className="h-20 flex items-center px-6">
-          <img 
-            src="/hashtag logo text.png" 
-            alt="Hashtag Logo" 
-            className="h-[30px]"
-          />
-        </div>
-        
         {/* Menu Items */}
-        <div className="px-6 space-y-4">
+        <div className="px-6 pt-6 space-y-4">
           <button
             onClick={() => {
               handleSwitchEvent();
@@ -874,9 +847,9 @@ export default function Home() {
             className="cursor-pointer hover:opacity-80 transition-opacity"
           >
             <img 
-              src="/hashtag logo.png" 
+              src="/hashtag logo text.png" 
               alt="Hashtag Logo" 
-              className="h-[33px] w-[33px] object-contain"
+              className="h-[33px] object-contain"
             />
           </button>
         </div>

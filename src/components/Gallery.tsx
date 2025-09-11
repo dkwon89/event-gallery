@@ -30,9 +30,6 @@ if (typeof document !== 'undefined') {
 interface GalleryProps {
   eventCode: string;
   refreshKey: number;
-  isSelectMode?: boolean;
-  selectedFiles?: Map<string, string>;
-  onFileSelect?: (fileId: string, fileName: string) => void;
 }
 
 interface FileObject {
@@ -43,7 +40,7 @@ interface FileObject {
   uploader_name?: string;
 }
 
-export default function Gallery({ eventCode, refreshKey, isSelectMode = false, selectedFiles = new Map(), onFileSelect }: GalleryProps) {
+export default function Gallery({ eventCode, refreshKey }: GalleryProps) {
   const [files, setFiles] = useState<FileObject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -319,11 +316,6 @@ export default function Gallery({ eventCode, refreshKey, isSelectMode = false, s
   };
 
   const handleTileClick = (file: FileObject) => {
-    if (isSelectMode && onFileSelect) {
-      onFileSelect(file.id, file.name);
-      return;
-    }
-
     const fileType = getFileType(file.name);
     const publicUrl = getPublicUrl(file.name);
     
@@ -435,27 +427,9 @@ export default function Gallery({ eventCode, refreshKey, isSelectMode = false, s
           return (
             <div
               key={`file-${file.id}`}
-              className={`relative aspect-square bg-white overflow-hidden cursor-pointer transition-all duration-300 group shadow-sm hover:shadow-lg hover:-translate-y-1 ${
-                isSelectMode && selectedFiles.has(file.id) ? 'ring-2 ring-primary shadow-lg -translate-y-1' : ''
-              }`}
+              className="relative aspect-square bg-white overflow-hidden cursor-pointer transition-all duration-300 group shadow-sm hover:shadow-lg hover:-translate-y-1"
               onClick={() => handleTileClick(file)}
             >
-              {/* Selection Checkbox */}
-              {isSelectMode && (
-                <div className="absolute top-2 left-2 z-10">
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                    selectedFiles.has(file.id)
-                      ? 'bg-primary border-primary'
-                      : 'bg-background border-border'
-                  }`}>
-                    {selectedFiles.has(file.id) && (
-                      <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </div>
-                </div>
-              )}
               {fileType === 'image' ? (
                 <div className="relative aspect-square w-full h-full">
                   <NextImage
