@@ -254,7 +254,7 @@ export default function LightboxModal({
                   transform: `scale(${scale}) translate(${panX}px, ${panY}px)`,
                   transformOrigin: 'center center'
                 }}
-                onClick={(_e) => {
+                onClick={() => {
                   // Only toggle controls if not zoomed in and not panning
                   if (scale === 1 && !isPanning) {
                     setShowControls(!showControls);
@@ -324,7 +324,7 @@ export default function LightboxModal({
                 preload="metadata"
                 className="rounded"
                 style={{ width: '100vw', height: '100vh', objectFit: 'contain' }}
-                onClick={(_e) => {
+                onClick={() => {
                   // Only toggle controls if not zoomed in and not panning
                   if (scale === 1 && !isPanning) {
                     setShowControls(!showControls);
