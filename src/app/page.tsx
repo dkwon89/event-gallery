@@ -17,7 +17,7 @@ export default function Home() {
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authMode, setAuthMode] = useState<'initial' | 'signup' | 'signin' | 'guest' | 'authenticated' | 'unauthenticated'>('signin');
-  const [userId, setUserId] = useState<string | null>(null);
+  // const [userId, setUserId] = useState<string | null>(null);
   const [step, setStep] = useState<'event' | 'name' | 'complete'>('event');
   const [activeTab, setActiveTab] = useState<'create' | 'join'>('create');
   const [resetTrigger, setResetTrigger] = useState(0);
@@ -296,7 +296,7 @@ export default function Home() {
 
         if (session?.user) {
           console.log('User found in session:', session.user.id);
-          setUserId(session.user.id);
+          // setUserId(session.user.id);
           setAuthMode('authenticated');
           
           // Try to load user's display name, but don't fail if it doesn't work
@@ -465,13 +465,13 @@ export default function Home() {
   };
 
   const handleSignUpSuccess = useCallback((newUserId: string) => {
-    setUserId(newUserId);
+    // setUserId(newUserId);
     setAuthMode('authenticated');
     clearFormFields();
   }, [clearFormFields]);
 
   const handleSignInSuccess = useCallback((newUserId: string) => {
-    setUserId(newUserId);
+    // setUserId(newUserId);
     setAuthMode('authenticated');
     clearFormFields();
   }, [clearFormFields]);
@@ -479,7 +479,7 @@ export default function Home() {
   const handleSignOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
-      setUserId(null);
+      // setUserId(null);
       setAuthMode('initial');
       setEventCode(null);
       setDisplayName(null);
