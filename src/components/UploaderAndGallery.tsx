@@ -4,6 +4,76 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import Gallery from './Gallery';
 import { useToast } from './Toast';
+
+// Gallery Counter Component
+function GalleryCounter({ eventCode, refreshKey }: { eventCode: string | null; refreshKey: number }) {
+  const [photoCount, setPhotoCount] = useState(0);
+  const [videoCount, setVideoCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!eventCode) return;
+
+    const fetchCounts = async () => {
+      try {
+        setLoading(true);
+        
+        // Get all files for this event (using same table as Gallery component)
+        const { data: files, error } = await supabase
+          .from('media')
+          .select('filename')
+          .eq('event_code', eventCode);
+
+        if (error) {
+          console.error('Error fetching files:', error);
+          return;
+        }
+
+        if (files) {
+          let photos = 0;
+          let videos = 0;
+          
+          files.forEach(file => {
+            const extension = file.filename.split('.').pop()?.toLowerCase();
+            
+            if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(extension || '')) {
+              photos++;
+            } else if (['mp4', 'mov', 'webm'].includes(extension || '')) {
+              videos++;
+            }
+          });
+
+          setPhotoCount(photos);
+          setVideoCount(videos);
+        }
+      } catch (error) {
+        console.error('Error counting files:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCounts();
+  }, [eventCode, refreshKey]);
+
+  if (loading) {
+    return (
+      <div className="text-center py-2">
+        <p className="text-muted-foreground text-sm">Loading...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-center py-1">
+      <p className="text-muted-foreground text-sm font-bold">
+        {photoCount} {photoCount === 1 ? 'photo' : 'photos'}
+        {videoCount > 0 && ` and ${videoCount} ${videoCount === 1 ? 'video' : 'videos'}`}
+      </p>
+    </div>
+  );
+}
+
 import { normalizeHashtag } from '@/lib/hashtags';
 
 export default function UploaderAndGallery() {
@@ -302,78 +372,86 @@ export default function UploaderAndGallery() {
 
   return (
     <div className="w-full">
-      <div className="space-y-6">
+      <div className="space-y-2">
         {/* Upload Section - Centered */}
-        <div className="max-w-md mx-auto px-4 py-6">
-          <div className="space-y-4">
-            <div className="relative">
-              <input
-                id="file-upload"
-                type="file"
-                multiple
-                accept="image/*,video/*"
-                onChange={handleFileUpload}
-                disabled={isUploading}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-              />
-              <button
-                type="button"
-                disabled={isUploading}
-                className="btn btn-primary w-full h-11 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
-              >
-                {/* Progress bar background */}
-                {isUploading && (
-                  <div 
-                    className="absolute inset-0 bg-white/20 transition-all duration-300 ease-out"
-                    style={{ width: `${uploadProgress}%` }}
-                  ></div>
-                )}
-                
-                {/* Button content */}
-                <div className="relative z-10">
-                  {isUploading ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Uploading {uploadProgress}%</span>
-                    </div>
-                  ) : (
-                    'Upload Photos & Videos'
+        <div className="max-w-md mx-auto px-4 py-4">
+          <div className="card p-6">
+            <div className="space-y-4">
+              <div className="relative">
+                <input
+                  id="file-upload"
+                  type="file"
+                  multiple
+                  accept="image/*,video/*"
+                  onChange={handleFileUpload}
+                  disabled={isUploading}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                />
+                <button
+                  type="button"
+                  disabled={isUploading}
+                  onClick={() => document.getElementById('file-upload')?.click()}
+                  className="btn btn-primary w-full h-11 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
+                >
+                  {/* Progress bar background */}
+                  {isUploading && (
+                    <div 
+                      className="absolute inset-0 bg-white/20 transition-all duration-300 ease-out"
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
                   )}
-                </div>
-              </button>
-            </div>
-
-            {/* Select and Download Buttons */}
-            <div className="flex gap-3">
-              <button
-                onClick={handleSelectMode}
-                className={`flex-1 btn h-11 ${
-                  isSelectMode
-                    ? 'btn-primary'
-                    : 'btn-secondary'
-                }`}
-              >
-                {isSelectMode ? 'Cancel Select' : 'Select'}
-              </button>
-              <button
-                onClick={handleDownloadSelected}
-                disabled={selectedFiles.size === 0}
-                className={`flex-1 btn h-11 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  selectedFiles.size > 0
-                    ? 'btn-primary'
-                    : 'btn-ghost'
-                }`}
-              >
-                Download ({selectedFiles.size})
-              </button>
-            </div>
-
-            {uploadError && (
-              <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
-                <p className="text-destructive text-body-sm text-center">{uploadError}</p>
+                  
+                  {/* Button content */}
+                  <div className="relative z-10">
+                    {isUploading ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Uploading {uploadProgress}%</span>
+                      </div>
+                    ) : (
+                      'Upload Photos & Videos'
+                    )}
+                  </div>
+                </button>
               </div>
-            )}
+
+              {/* Select and Download Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSelectMode}
+                  className={`flex-1 btn h-11 ${
+                    isSelectMode
+                      ? 'btn-primary'
+                      : 'btn-secondary'
+                  }`}
+                >
+                  {isSelectMode ? 'Cancel Select' : 'Select'}
+                </button>
+                <button
+                  onClick={handleDownloadSelected}
+                  disabled={selectedFiles.size === 0}
+                  className={`flex-1 btn h-11 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    selectedFiles.size > 0
+                      ? 'btn-primary'
+                      : 'btn-ghost'
+                  }`}
+                >
+                  Download ({selectedFiles.size})
+                </button>
+              </div>
+
+              {uploadError && (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
+                  <p className="text-destructive text-body-sm text-center">{uploadError}</p>
+                </div>
+              )}
+            </div>
           </div>
+        </div>
+
+        {/* Gallery Counter */}
+        <div className="w-full px-4">
+          <GalleryCounter eventCode={eventCode} refreshKey={refreshKey} />
         </div>
 
         {/* Gallery Section - Full Width */}

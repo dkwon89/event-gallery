@@ -90,31 +90,29 @@ export default function SignInScreen({ onSignInSuccess, onBackToAuth, onSwitchTo
       )}
 
       {/* Slide-out Menu Panel */}
-      <div className={`fixed top-0 left-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
-        isMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+        isMenuOpen ? 'translate-x-0' : 'translate-x-full'
       }`}>
-        <div className="p-6 pt-8">
-          {/* Small Logo */}
-          <div className="pt-8 pb-12">
-            <img
-              src="/hashtag logo.png"
-              alt="Hashtag Logo"
-              width="40"
-              height="40"
-            />
-          </div>
-          
-          <div className="space-y-4">
-            <button
-              onClick={() => {
-                onBackToAuth();
-                setIsMenuOpen(false);
-              }}
-              className="btn btn-secondary w-full h-11"
-            >
-              Continue as Guest
-            </button>
-          </div>
+        {/* Logo Area - Fixed Height */}
+        <div className="h-20 flex items-center px-6">
+          <img 
+            src="/hashtag logo text.png" 
+            alt="Hashtag Logo" 
+            className="h-[30px]"
+          />
+        </div>
+        
+        {/* Menu Items */}
+        <div className="px-6 space-y-4">
+          <button
+            onClick={() => {
+              onBackToAuth();
+              setIsMenuOpen(false);
+            }}
+            className="btn btn-secondary w-full h-11"
+          >
+            Continue as Guest
+          </button>
         </div>
       </div>
 
@@ -122,15 +120,21 @@ export default function SignInScreen({ onSignInSuccess, onBackToAuth, onSwitchTo
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">
             <div className="mt-8 mb-12">
-              <img 
-                src="/hashtag logo.png" 
-                alt="Hashtag Logo" 
-                width="120" 
-                height="120" 
-                className="mx-auto"
-              />
+              <button
+                onClick={() => {
+                  window.location.href = '/';
+                }}
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+              >
+                <img 
+                  src="/hashtag logo text.png" 
+                  alt="Hashtag Logo" 
+                  className="h-[30px] mx-auto"
+                />
+              </button>
             </div>
             <InstallPrompt />
+
           </div>
         </div>
 
@@ -214,3 +218,4 @@ export default function SignInScreen({ onSignInSuccess, onBackToAuth, onSwitchTo
     </div>
   );
 }
+

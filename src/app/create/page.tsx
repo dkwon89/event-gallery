@@ -239,7 +239,7 @@ export default function CreatePage() {
             id="pin"
             value={pin}
             onChange={(e) => setPin(e.target.value)}
-            placeholder="1234"
+            placeholder="Enter PIN"
             maxLength={4}
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required

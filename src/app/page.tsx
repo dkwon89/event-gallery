@@ -546,7 +546,7 @@ export default function Home() {
         {/* Hamburger Menu Button */}
         <button
           onClick={toggleMenu}
-          className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow"
+          className="fixed top-4 right-4 z-50 p-2 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow"
         >
           <svg className="w-6 h-6 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -562,46 +562,53 @@ export default function Home() {
         )}
 
         {/* Slide-out Menu Panel */}
-        <div className={`fixed top-0 left-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
-          isMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+          isMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}>
-          <div className="p-6 pt-8">
-            {/* Small Logo */}
-            <div className="pt-8 pb-12">
-              <img
-                src="/hashtag logo.png"
-                alt="Hashtag Logo"
-                width="40"
-                height="40"
-              />
-            </div>
-            
-            <div className="space-y-4">
-              <button
-                onClick={() => {
-                  handleSignIn();
-                  setIsMenuOpen(false);
-                }}
-                className="btn btn-primary w-full h-11"
-              >
-                Log In
-              </button>
-            </div>
+          {/* Logo Area - Fixed Height */}
+          <div className="h-20 flex items-center px-6">
+            <img 
+              src="/hashtag logo text.png" 
+              alt="Hashtag Logo" 
+              className="h-[30px]"
+            />
+          </div>
+          
+          {/* Menu Items */}
+          <div className="px-6 space-y-4">
+            <button
+              onClick={() => {
+                handleSignIn();
+                setIsMenuOpen(false);
+              }}
+              className="btn btn-primary w-full h-11"
+            >
+              Log In
+            </button>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-8">
+        {/* Logo in upper left corner */}
+        <div className="fixed top-4 left-4 z-30">
+          <button
+            onClick={() => {
+              setStep('event');
+              setAuthMode('unauthenticated');
+              setActiveTab('create');
+            }}
+            className="cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            <img 
+              src="/hashtag logo.png" 
+              alt="Hashtag Logo" 
+              className="h-[33px] w-[33px] object-contain"
+            />
+          </button>
+        </div>
+
+        <div className="container mx-auto px-4 py-4 sm:py-8">
           <div className="max-w-md mx-auto">
             <div className="text-center mb-8">
-              <div className="mt-8 mb-12">
-                <img 
-                  src="/hashtag logo.png" 
-                  alt="Hashtag Logo" 
-                  width="120" 
-                  height="120" 
-                  className="mx-auto"
-                />
-              </div>
               {authMode === 'authenticated' && (
                 <div className="flex items-center justify-center gap-2 mb-4">
                   <span className="text-body-sm text-muted-foreground">Signed in as {displayName}</span>
@@ -614,6 +621,11 @@ export default function Home() {
                 </div>
               )}
               <InstallPrompt />
+            </div>
+        
+            {/* Welcome Text */}
+            <div className="text-center pt-20 pb-4 mb-4">
+              <h1 className="text-2xl font-semibold text-foreground">Welcome to Hashtag.</h1>
             </div>
         
             {/* Tabs */}
@@ -678,7 +690,7 @@ export default function Home() {
                         id="pin"
                         value={pin}
                         onChange={handlePinChange}
-                        placeholder="1234"
+                        placeholder="Enter PIN"
                         maxLength={4}
                         className="input"
                         required
@@ -734,7 +746,7 @@ export default function Home() {
         {/* Hamburger Menu Button */}
         <button
           onClick={toggleMenu}
-          className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow"
+          className="fixed top-4 right-4 z-50 p-2 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow"
         >
           <svg className="w-6 h-6 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -750,46 +762,35 @@ export default function Home() {
         )}
 
         {/* Slide-out Menu Panel */}
-        <div className={`fixed top-0 left-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
-          isMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+          isMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}>
-          <div className="p-6 pt-8">
-            {/* Small Logo */}
-            <div className="pt-8 pb-12">
-              <img
-                src="/hashtag logo.png"
-                alt="Hashtag Logo"
-                width="40"
-                height="40"
-              />
-            </div>
-            
-            <div className="space-y-4">
-              <button
-                onClick={() => {
-                  handleSignIn();
-                  setIsMenuOpen(false);
-                }}
-                className="btn btn-primary w-full h-11"
-              >
-                Log In
-              </button>
-            </div>
+          {/* Logo Area - Fixed Height */}
+          <div className="h-20 flex items-center px-6">
+            <img 
+              src="/hashtag logo text.png" 
+              alt="Hashtag Logo" 
+              className="h-[30px]"
+            />
+          </div>
+          
+          {/* Menu Items */}
+          <div className="px-6 space-y-4">
+            <button
+              onClick={() => {
+                handleSignIn();
+                setIsMenuOpen(false);
+              }}
+              className="btn btn-primary w-full h-11"
+            >
+              Log In
+            </button>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-4 sm:py-8">
           <div className="max-w-md mx-auto">
             <div className="text-center mb-8">
-              <div className="mt-8 mb-12">
-                <img 
-                  src="/hashtag logo.png" 
-                  alt="Hashtag Logo" 
-                  width="120" 
-                  height="120" 
-                  className="mx-auto"
-                />
-              </div>
               <InstallPrompt />
             </div>
             <NameForm onComplete={handleNameComplete} onBack={handleBackToEvent} eventCode={eventCode} />
@@ -808,7 +809,7 @@ export default function Home() {
       {/* Hamburger Menu Button */}
       <button
         onClick={toggleMenu}
-        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow"
+        className="fixed top-4 right-4 z-50 p-2 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow"
       >
         <svg className="w-6 h-6 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -824,62 +825,74 @@ export default function Home() {
       )}
 
       {/* Slide-out Menu Panel */}
-      <div className={`fixed top-0 left-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
-        isMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+        isMenuOpen ? 'translate-x-0' : 'translate-x-full'
       }`}>
-        <div className="p-6 pt-8">
-          {/* Small Logo */}
-          <div className="pt-8 pb-12">
-            <img 
-              src="/hashtag logo.png" 
-              alt="Hashtag Logo" 
-              width="40" 
-              height="40" 
-            />
-          </div>
-          
-          <div className="space-y-4">
+        {/* Logo Area - Fixed Height */}
+        <div className="h-20 flex items-center px-6">
+          <img 
+            src="/hashtag logo text.png" 
+            alt="Hashtag Logo" 
+            className="h-[30px]"
+          />
+        </div>
+        
+        {/* Menu Items */}
+        <div className="px-6 space-y-4">
+          <button
+            onClick={() => {
+              handleSwitchEvent();
+              setIsMenuOpen(false);
+            }}
+            className="btn btn-primary w-full h-11"
+          >
+            Switch Event
+          </button>
+          {authMode !== 'authenticated' && (
             <button
               onClick={() => {
-                handleSwitchEvent();
+                handleSignUp();
                 setIsMenuOpen(false);
               }}
               className="btn btn-primary w-full h-11"
             >
-              Switch Event
+              Sign Up
             </button>
-            {authMode !== 'authenticated' && (
-              <button
-                onClick={() => {
-                  handleSignUp();
-                  setIsMenuOpen(false);
-                }}
-                className="btn btn-primary w-full h-11"
-              >
-                Sign Up
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
       <div className="w-full">
-        {/* Header Section - Centered */}
-        <div className="text-center py-8 px-4">
+        {/* Logo in upper left corner */}
+        <div className="fixed top-4 left-4 z-30">
+          <button
+            onClick={() => {
+              setStep('event');
+              setAuthMode('unauthenticated');
+              setActiveTab('create');
+            }}
+            className="cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            <img 
+              src="/hashtag logo.png" 
+              alt="Hashtag Logo" 
+              className="h-[33px] w-[33px] object-contain"
+            />
+          </button>
+        </div>
+
+        <div className="container mx-auto px-4 py-4 sm:py-8">
           <div className="max-w-md mx-auto">
-            <div className="mt-8 mb-8">
-              <img 
-                src="/hashtag logo.png" 
-                alt="Hashtag Logo" 
-                width="120" 
-                height="120" 
-                className="mx-auto"
-              />
+            <div className="text-center mb-8">
+              <InstallPrompt />
             </div>
-            <h1 className="text-h3 text-foreground">
-              Welcome to #{eventCode}, {displayName}!
-            </h1>
-            <InstallPrompt />
+        
+            {/* Welcome Text */}
+            <div className="text-center pt-20 pb-4 mb-4">
+              <h1 className="text-2xl font-semibold text-foreground">
+                Welcome to #{eventCode}, {displayName}!
+              </h1>
+            </div>
           </div>
         </div>
 

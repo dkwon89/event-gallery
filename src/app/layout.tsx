@@ -54,12 +54,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ToastProvider>
-          <div className="min-h-screen bg-neutral-50">
-            <div className="w-full px-2 py-4">
-              <div className="bg-white shadow-lg rounded-2xl p-6 min-h-screen">
-                {children}
-              </div>
-            </div>
+          <div className="min-h-screen bg-white">
+            {children}
           </div>
           <PWARegister />
           <OfflineIndicator />

@@ -427,14 +427,7 @@ export default function Gallery({ eventCode, refreshKey, isSelectMode = false, s
   return (
     <div className="w-full">
       <div className="space-y-6 py-6">
-        <div className="text-center px-4">
-          <h3 className="text-h2 text-foreground mb-2">
-            Gallery ({files.length} files)
-          </h3>
-          <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-muted-foreground/30 to-transparent mx-auto"></div>
-        </div>
-        
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 px-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-0.5 px-4">
         {files.map((file) => {
           const fileType = getFileType(file.name);
           const publicUrl = getPublicUrl(file.name);
@@ -442,7 +435,7 @@ export default function Gallery({ eventCode, refreshKey, isSelectMode = false, s
           return (
             <div
               key={`file-${file.id}`}
-              className={`relative aspect-square bg-white rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 group shadow-sm hover:shadow-lg hover:-translate-y-1 ${
+              className={`relative aspect-square bg-white overflow-hidden cursor-pointer transition-all duration-300 group shadow-sm hover:shadow-lg hover:-translate-y-1 ${
                 isSelectMode && selectedFiles.has(file.id) ? 'ring-2 ring-primary shadow-lg -translate-y-1' : ''
               }`}
               onClick={() => handleTileClick(file)}
@@ -470,7 +463,7 @@ export default function Gallery({ eventCode, refreshKey, isSelectMode = false, s
                     alt={file.name}
                     fill
                     sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-                    className="object-cover rounded-2xl"
+                    className="object-cover"
                     loading="lazy"
                     quality={85}
                     placeholder="blur"
@@ -521,7 +514,7 @@ export default function Gallery({ eventCode, refreshKey, isSelectMode = false, s
               
               {/* Uploader Name */}
               {file.uploader_name && (
-                <div className="absolute bottom-3 left-3 bg-white/95 text-foreground text-xs px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm border border-white/20">
+                <div className="absolute bottom-3 left-3 text-white text-xs font-bold">
                   {file.uploader_name}
                 </div>
               )}

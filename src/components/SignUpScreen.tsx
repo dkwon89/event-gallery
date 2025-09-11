@@ -144,18 +144,25 @@ export default function SignUpScreen({ onSignUpSuccess, onBackToAuth }: SignUpSc
         </svg>
       </button>
 
+      {/* Logo in upper left corner */}
+      <div className="fixed top-4 left-4 z-30">
+        <button
+          onClick={() => {
+            window.location.href = '/';
+          }}
+          className="cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          <img 
+            src="/hashtag logo.png" 
+            alt="Hashtag Logo" 
+            className="h-[33px] w-[33px] object-contain"
+          />
+        </button>
+      </div>
+
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">
-            <div className="mt-8 mb-12">
-              <img 
-                src="/hashtag logo.png" 
-                alt="Hashtag Logo" 
-                width="120" 
-                height="120" 
-                className="mx-auto"
-              />
-            </div>
             <InstallPrompt />
           </div>
         </div>

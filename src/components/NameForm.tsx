@@ -8,7 +8,7 @@ interface NameFormProps {
   eventCode?: string | null;
 }
 
-export default function NameForm({ onComplete, onBack }: NameFormProps) {
+export default function NameForm({ onComplete, onBack, eventCode }: NameFormProps) {
   const [displayName, setDisplayName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,7 +39,33 @@ export default function NameForm({ onComplete, onBack }: NameFormProps) {
   };
 
   return (
-    <div className="card p-6">
+    <div className="min-h-screen bg-white relative">
+      {/* Logo in upper left corner */}
+      <div className="fixed top-4 left-4 z-30">
+        <button
+          onClick={() => {
+            window.location.href = '/';
+          }}
+          className="cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          <img 
+            src="/hashtag logo.png" 
+            alt="Hashtag Logo" 
+            className="h-[33px] w-[33px] object-contain"
+          />
+        </button>
+      </div>
+      
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-md mx-auto">
+          {/* Joining Text */}
+          <div className="text-center pt-20 pb-4 mb-4">
+            <h1 className="text-2xl font-semibold text-foreground">
+              Joining {eventCode ? `#${eventCode}` : 'event'}
+            </h1>
+          </div>
+          
+          <div className="card p-6">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="displayName" className="block text-body-sm font-medium text-foreground mb-2">
@@ -78,6 +104,9 @@ export default function NameForm({ onComplete, onBack }: NameFormProps) {
           </button>
         </div>
       </form>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
