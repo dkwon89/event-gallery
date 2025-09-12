@@ -16,13 +16,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Event Gallery",
+  title: "Hashtag",
   description: "Event photo gallery with Supabase storage",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Gallery",
+    title: "Hashtag",
   },
 };
 
@@ -47,7 +47,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Gallery" />
+        <meta name="apple-mobile-web-app-title" content="Hashtag" />
         <meta name="microphone" content="deny" />
       </head>
       <body
