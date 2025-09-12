@@ -456,7 +456,7 @@ export default function Gallery({ eventCode, refreshKey }: GalleryProps) {
                     src={publicUrl}
                     muted
                     playsInline
-                    className="aspect-square object-cover rounded-2xl w-full h-full"
+                    className="aspect-square object-cover w-full h-full"
                     preload="none"
                     controls={false}
                     autoPlay={false}

@@ -102,11 +102,6 @@ export default function UploaderAndGallery() {
     setDisplayName(storedDisplayName);
   }, []);
 
-  const handleSwitchEvent = () => {
-    localStorage.removeItem('eventCode');
-    localStorage.removeItem('displayName');
-    window.location.reload();
-  };
 
 
 
@@ -115,14 +110,15 @@ export default function UploaderAndGallery() {
     if (!files || files.length === 0) return;
 
     setIsUploading(true);
-    setUploadProgress(0);
     setUploadError(null);
 
     try {
       const fileArray = Array.from(files);
-      let completedFiles = 0;
 
-      const uploadPromises = fileArray.map(async (file) => {
+      // Upload files sequentially
+      for (let i = 0; i < fileArray.length; i++) {
+        const file = fileArray[i];
+        
         // Keep original filename but sanitize it for safe storage
         const originalName = file.name;
         const sanitizedFileName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -166,16 +162,7 @@ export default function UploaderAndGallery() {
           // Don't throw error here - file was uploaded successfully
           // Just log the error and continue
         }
-
-        // Update progress
-        completedFiles++;
-        const progress = Math.round((completedFiles / fileArray.length) * 100);
-        setUploadProgress(progress);
-
-        return sanitizedFileName;
-      });
-
-      await Promise.all(uploadPromises);
+      }
       
       // Show success toast
       showToast(`Successfully uploaded ${files.length} file${files.length > 1 ? 's' : ''}!`);
@@ -206,7 +193,6 @@ export default function UploaderAndGallery() {
       showToast(errorMessage, 'error');
     } finally {
       setIsUploading(false);
-      setUploadProgress(0);
     }
   };
 
@@ -223,12 +209,6 @@ export default function UploaderAndGallery() {
     return (
       <div className="card-floating p-6 text-center">
         <p className="mb-2 text-muted-foreground">Missing event information.</p>
-        <button
-          onClick={handleSwitchEvent}
-          className="btn-ghost text-primary hover:text-primary/80"
-        >
-          Switch Event
-        </button>
       </div>
     );
   }
@@ -243,12 +223,6 @@ export default function UploaderAndGallery() {
           <p className="text-yellow-800 text-sm mb-3">
             The stored event code is invalid or corrupted.
           </p>
-          <button
-            onClick={handleSwitchEvent}
-            className="btn-ghost text-primary hover:text-primary/80"
-          >
-            Join a new event
-          </button>
         </div>
       </div>
     );
@@ -275,27 +249,9 @@ export default function UploaderAndGallery() {
                   type="button"
                   disabled={isUploading}
                   onClick={() => document.getElementById('file-upload')?.click()}
-                  className="btn btn-primary w-full h-11 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
+                  className="btn btn-primary w-full h-11 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {/* Progress bar background */}
-                  {isUploading && (
-                    <div 
-                      className="absolute inset-0 bg-white/20 transition-all duration-300 ease-out"
-                      style={{ width: `${uploadProgress}%` }}
-                    ></div>
-                  )}
-                  
-                  {/* Button content */}
-                  <div className="relative z-10">
-                    {isUploading ? (
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Uploading {uploadProgress}%</span>
-                      </div>
-                    ) : (
-                      'Upload Photos & Videos'
-                    )}
-                  </div>
+                  Upload Photos & Videos
                 </button>
               </div>
 

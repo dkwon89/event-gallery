@@ -21,6 +21,7 @@ export default function Home() {
   const [step, setStep] = useState<'event' | 'name' | 'complete'>('event');
   const [activeTab, setActiveTab] = useState<'create' | 'join'>('create');
   const [resetTrigger, setResetTrigger] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
   // isValidEventCode state removed - now handling validation silently
   
   // Create form state
@@ -53,6 +54,19 @@ export default function Home() {
   useEffect(() => {
     smoothScrollToTop();
   }, [authMode]);
+
+  // Save current step to sessionStorage whenever it changes (but only after initialization)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && isInitialized) {
+      console.log('Saving step to sessionStorage:', step);
+      sessionStorage.setItem('currentStep', step);
+    }
+  }, [step, isInitialized]);
+
+  // Debug: Log step changes
+  useEffect(() => {
+    console.log('Step changed to:', step, 'isInitialized:', isInitialized);
+  }, [step, isInitialized]);
 
 
   // Create form functions
@@ -238,30 +252,56 @@ export default function Home() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        const storedEventCode = localStorage.getItem('eventCode');
-        const storedDisplayName = localStorage.getItem('displayName');
+        // Always try to restore the last step from sessionStorage first
+        const savedStep = sessionStorage.getItem('currentStep');
+        console.log('Saved step from sessionStorage:', savedStep);
         
-        console.log('Restoring state from localStorage:', { storedEventCode, storedDisplayName });
-        
-        if (storedEventCode && storedDisplayName) {
-          // User has both event and name - go to complete step (gallery)
-          setEventCode(storedEventCode);
-          setDisplayName(storedDisplayName);
-          setStep('complete');
-          console.log('Restored to complete step');
-        } else if (storedEventCode) {
-          // User has event but no name - go to name step
-          setEventCode(storedEventCode);
-          setStep('name');
-          console.log('Restored to name step');
+        if (savedStep && ['event', 'name', 'complete'].includes(savedStep)) {
+          // We have a valid saved step - restore it exactly
+          console.log('Restoring saved step:', savedStep);
+          setStep(savedStep as 'event' | 'name' | 'complete');
+          
+          // Also restore the data for that step
+          const storedEventCode = localStorage.getItem('eventCode');
+          const storedDisplayName = localStorage.getItem('displayName');
+          
+          if (storedEventCode) {
+            setEventCode(storedEventCode);
+          }
+          if (storedDisplayName) {
+            setDisplayName(storedDisplayName);
+          }
         } else {
-          // No stored state - start at event step
-          setStep('event');
-          console.log('Starting at event step');
+          // No saved step - determine step based on stored data (fresh visit)
+          const storedEventCode = localStorage.getItem('eventCode');
+          const storedDisplayName = localStorage.getItem('displayName');
+          
+          console.log('No saved step - determining from localStorage:', { storedEventCode, storedDisplayName });
+          
+          if (storedEventCode && storedDisplayName) {
+            // User has both event and name - go to complete step (gallery)
+            setEventCode(storedEventCode);
+            setDisplayName(storedDisplayName);
+            setStep('complete');
+            console.log('Set to complete step based on data');
+          } else if (storedEventCode) {
+            // User has event but no name - go to name step
+            setEventCode(storedEventCode);
+            setStep('name');
+            console.log('Set to name step based on data');
+          } else {
+            // No stored state - start at event step
+            setStep('event');
+            console.log('Set to event step - no data');
+          }
         }
+        
+        // Mark as initialized to prevent interference
+        setIsInitialized(true);
       } catch (error) {
         console.error('Error reading from localStorage on init:', error);
         setStep('event');
+        setIsInitialized(true);
       }
     }
   }, []);
@@ -490,20 +530,6 @@ export default function Home() {
     }
   }, [clearFormFields]);
 
-  const handleSwitchEvent = () => {
-    // Clear localStorage and reset state
-    localStorage.removeItem('eventCode');
-    localStorage.removeItem('displayName');
-    setEventCode(null);
-    setDisplayName(null);
-    setStep('event');
-    
-    // Clear all form fields
-    clearFormFields();
-    
-    // Go back to guest mode
-    setAuthMode('guest');
-  };
 
   if (isLoading) {
     return (
@@ -574,7 +600,7 @@ export default function Home() {
               }}
               className="btn btn-primary w-full h-11"
             >
-              Log In
+              Sign In
             </button>
           </div>
         </div>
@@ -765,7 +791,7 @@ export default function Home() {
               }}
               className="btn btn-primary w-full h-11"
             >
-              Log In
+              Sign In
             </button>
           </div>
         </div>
@@ -812,15 +838,6 @@ export default function Home() {
       }`}>
         {/* Menu Items */}
         <div className="px-6 pt-6 space-y-4">
-          <button
-            onClick={() => {
-              handleSwitchEvent();
-              setIsMenuOpen(false);
-            }}
-            className="btn btn-primary w-full h-11"
-          >
-            Switch Event
-          </button>
           {authMode !== 'authenticated' && (
             <button
               onClick={() => {

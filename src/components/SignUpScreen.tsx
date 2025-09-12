@@ -137,7 +137,7 @@ export default function SignUpScreen({ onSignUpSuccess, onBackToAuth }: SignUpSc
       {/* Hamburger Menu Button */}
       <button
         onClick={() => {}}
-        className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow"
+        className="fixed top-4 right-4 z-50 p-2 rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow"
       >
         <svg className="w-6 h-6 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -160,27 +160,32 @@ export default function SignUpScreen({ onSignUpSuccess, onBackToAuth }: SignUpSc
         </button>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">
             <InstallPrompt />
           </div>
         </div>
 
-        <div className="max-w-md mx-auto">
-          <div className="card p-8">
-        <div className="mb-6">
-          <button
-            onClick={onBackToAuth}
-            className="btn-ghost text-primary hover:text-primary/80 text-body-sm font-medium mb-4 inline-flex items-center"
-          >
-            ← Back to options
-          </button>
-          <h1 className="text-h2 text-foreground mb-2">Create Account</h1>
-          <p className="text-body text-muted-foreground">
-            Sign up to keep track of all your hashtags and access them across devices.
-          </p>
+        {/* Welcome Text */}
+        <div className="text-center pt-20 pb-4 mb-4">
+          <h1 className="text-2xl font-semibold text-foreground">Welcome to Hashtag.</h1>
         </div>
+
+        <div className="max-w-md mx-auto">
+          <div className="card p-6">
+            <div className="mb-6">
+              <button
+                onClick={onBackToAuth}
+                className="btn-ghost text-primary hover:text-primary/80 text-body-sm font-medium mb-4 inline-flex items-center"
+              >
+                ← Back to options
+              </button>
+              <h2 className="text-h2 text-foreground mb-2">Create Account</h2>
+              <p className="text-body text-muted-foreground">
+                Sign up to keep track of all your hashtags and access them across devices.
+              </p>
+            </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
