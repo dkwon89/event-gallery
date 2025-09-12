@@ -878,7 +878,7 @@ export default function Home() {
             </div>
         
             {/* Welcome Text */}
-            <div className="text-center py-8">
+            <div className="text-center pt-20 pb-4 mb-4">
               <h1 className="text-2xl font-semibold text-foreground">
                 Welcome to #{eventCode}, {displayName}!
               </h1>

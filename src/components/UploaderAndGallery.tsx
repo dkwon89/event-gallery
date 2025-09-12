@@ -232,8 +232,8 @@ export default function UploaderAndGallery() {
     <div className="w-full">
       <div className="space-y-2">
         {/* Upload Section - Centered */}
-        <div className="max-w-md mx-auto px-4 py-4">
-          <div className="card p-6">
+        <div className="max-w-md mx-auto">
+          <div className="card p-2 mb-6">
             <div className="space-y-4">
               <div className="relative">
                 <input
