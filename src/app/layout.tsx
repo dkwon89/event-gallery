@@ -19,6 +19,11 @@ export const metadata: Metadata = {
   title: "Hashtag",
   description: "Event photo gallery with Supabase storage",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/logo icon.png",
+    shortcut: "/logo icon.png",
+    apple: "/logo icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -44,7 +49,7 @@ export default function RootLayout({
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#111827" />
-        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <link rel="apple-touch-icon" href="/logo icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Hashtag" />
