@@ -12,20 +12,6 @@ import {
   stopEmptyGalleryRevalidation
 } from '@/lib/galleryCache';
 
-// Add shimmer animation CSS
-const shimmerCSS = `
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-`;
-
-// Inject CSS
-if (typeof document !== 'undefined') {
-  const style = document.createElement('style');
-  style.textContent = shimmerCSS;
-  document.head.appendChild(style);
-}
 
 interface GalleryProps {
   eventCode: string;
@@ -160,10 +146,10 @@ export default function Gallery({ eventCode, refreshKey }: GalleryProps) {
       loadFilesWithCache();
       isInitialLoad.current = false;
     } else if (isRefresh) {
-      // Only debounce on actual refreshes, not initial loads
-      debouncedFetchFiles();
+      // For upload refreshes, fetch immediately without debounce
+      fetchFilesFromSupabase();
     }
-  }, [eventCode, refreshKey, loadFilesWithCache, debouncedFetchFiles]);
+  }, [eventCode, refreshKey, loadFilesWithCache, fetchFilesFromSupabase]);
 
   // Setup intersection observer for preloading images
   useEffect(() => {
@@ -377,16 +363,8 @@ export default function Gallery({ eventCode, refreshKey }: GalleryProps) {
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={`skeleton-${i}`}
-              className="aspect-square bg-muted rounded-xl animate-pulse relative overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-muted via-muted-foreground/20 to-muted animate-pulse" 
-                   style={{
-                     background: 'linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%)',
-                     backgroundSize: '200% 100%',
-                     animation: 'shimmer 1.5s infinite'
-                   }}
-              />
-            </div>
+              className="aspect-square bg-gray-100 rounded-xl animate-pulse"
+            />
           ))}
         </div>
       </div>
@@ -440,8 +418,6 @@ export default function Gallery({ eventCode, refreshKey }: GalleryProps) {
                     className="object-cover"
                     loading="lazy"
                     quality={85}
-                    placeholder="blur"
-                    blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
                     onLoad={() => {
                       setLoadedImages(prev => new Set(prev).add(publicUrl));
                     }}

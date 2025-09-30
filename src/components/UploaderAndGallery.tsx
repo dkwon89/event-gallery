@@ -76,6 +76,123 @@ function GalleryCounter({ eventCode, refreshKey }: { eventCode: string | null; r
 
 import { normalizeHashtag } from '@/lib/hashtags';
 
+// Image compression utility
+const compressImage = (file: File, maxWidth = 1920, quality = 0.8): Promise<File> => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      // Calculate new dimensions
+      let { width, height } = img;
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width;
+        width = maxWidth;
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Draw and compress
+      ctx?.drawImage(img, 0, 0, width, height);
+      
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          } else {
+            resolve(file);
+          }
+        },
+        'image/jpeg',
+        quality
+      );
+    };
+    
+    img.src = URL.createObjectURL(file);
+  });
+};
+
+// Generate unique ID for upload tracking
+const generateUploadId = () => Math.random().toString(36).substr(2, 9);
+
+// Chunked upload for large files
+const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
+const LARGE_FILE_THRESHOLD = 50 * 1024 * 1024; // 50MB threshold for chunked upload
+
+const uploadFileInChunks = async (
+  file: File, 
+  filePath: string, 
+  onProgress: (progress: number) => void
+): Promise<void> => {
+  if (file.size <= LARGE_FILE_THRESHOLD) {
+    // Use regular upload for smaller files
+    const { error } = await supabase.storage
+      .from('media')
+      .upload(filePath, file, {
+        contentType: file.type,
+        upsert: false
+      });
+    
+    if (error) throw error;
+    onProgress(100);
+    return;
+  }
+
+  // Chunked upload for large files
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+  const uploadId = generateUploadId();
+  
+  for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+    const start = chunkIndex * CHUNK_SIZE;
+    const end = Math.min(start + CHUNK_SIZE, file.size);
+    const chunk = file.slice(start, end);
+    
+    const chunkPath = `${filePath}.chunk.${chunkIndex}`;
+    
+    const { error } = await supabase.storage
+      .from('media')
+      .upload(chunkPath, chunk, {
+        contentType: file.type,
+        upsert: false
+      });
+    
+    if (error) throw error;
+    
+    // Update progress
+    const progress = Math.round(((chunkIndex + 1) / totalChunks) * 100);
+    onProgress(progress);
+  }
+
+  // Note: In a production environment, you would need server-side logic
+  // to combine the chunks back into the original file
+  // For now, we'll upload the file normally as a fallback
+  const { error } = await supabase.storage
+    .from('media')
+    .upload(filePath, file, {
+      contentType: file.type,
+      upsert: false
+    });
+  
+  if (error) throw error;
+  onProgress(100);
+};
+
+interface UploadFile {
+  file: File;
+  id: string;
+  progress: number;
+  status: 'pending' | 'uploading' | 'completed' | 'error' | 'retrying';
+  error?: string;
+  retryCount: number;
+  maxRetries: number;
+}
+
 export default function UploaderAndGallery() {
   const [eventCode, setEventCode] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
@@ -84,7 +201,45 @@ export default function UploaderAndGallery() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [configError, setConfigError] = useState<string | null>(null);
+  const [uploadFiles, setUploadFiles] = useState<UploadFile[]>([]);
   const { showToast } = useToast();
+
+  // Retry failed uploads
+  const retryFailedUploads = async () => {
+    const failedUploads = uploadFiles.filter(f => f.status === 'error' && f.retryCount < f.maxRetries);
+    
+    for (const uploadFile of failedUploads) {
+      setUploadFiles(prev => prev.map(f => 
+        f.id === uploadFile.id ? { ...f, status: 'retrying', retryCount: f.retryCount + 1 } : f
+      ));
+
+      try {
+        const originalName = uploadFile.file.name;
+        const sanitizedFileName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const filePath = `${eventCode}/${sanitizedFileName}`;
+
+        await uploadFileInChunks(uploadFile.file, filePath, (progress) => {
+          setUploadFiles(prev => prev.map(f => 
+            f.id === uploadFile.id ? { ...f, progress } : f
+          ));
+        });
+
+        setUploadFiles(prev => prev.map(f => 
+          f.id === uploadFile.id ? { ...f, status: 'completed', progress: 100 } : f
+        ));
+
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        setUploadFiles(prev => prev.map(f => 
+          f.id === uploadFile.id ? { 
+            ...f, 
+            status: f.retryCount >= f.maxRetries ? 'error' : 'pending',
+            error: errorMessage 
+          } : f
+        ));
+      }
+    }
+  };
 
   // Check for missing env vars
   useEffect(() => {
@@ -112,87 +267,163 @@ export default function UploaderAndGallery() {
     setIsUploading(true);
     setUploadError(null);
 
+    // Initialize upload files with compression
+    const fileArray = Array.from(files);
+    const uploadFiles: UploadFile[] = [];
+
     try {
-      const fileArray = Array.from(files);
+      // Process files in parallel for compression
+      const processedFiles = await Promise.all(
+        fileArray.map(async (file) => {
+          const uploadId = generateUploadId();
+          let processedFile = file;
 
-      // Upload files sequentially
-      for (let i = 0; i < fileArray.length; i++) {
-        const file = fileArray[i];
-        
-        // Keep original filename but sanitize it for safe storage
-        const originalName = file.name;
-        const sanitizedFileName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
-        
-        // eventCode is already normalized, use it directly
-        const filePath = `${eventCode}/${sanitizedFileName}`;
-
-        // Upload file to storage
-        const { error: storageError } = await supabase.storage
-          .from('media')
-          .upload(filePath, file, {
-            contentType: file.type,
-            upsert: false
-          });
-
-        if (storageError) {
-          // Safely extract error message
-          let errorMsg = 'Unknown error';
-          try {
-            errorMsg = storageError.message || 'Unknown error';
-          } catch {
-            errorMsg = 'Failed to get error message';
+          // Compress images
+          if (file.type.startsWith('image/') && file.size > 500000) { // 500KB threshold
+            try {
+              processedFile = await compressImage(file);
+            } catch (error) {
+              console.warn('Compression failed, using original file:', error);
+            }
           }
-          throw new Error(`Failed to upload ${file.name}: ${errorMsg}`);
-        }
 
-        // Save metadata to database
-        const { error: dbError } = await supabase
-          .from('media')
-          .insert({
-            filename: sanitizedFileName,
-            file_path: filePath,
-            file_size: file.size,
-            mime_type: file.type,
-            uploader_name: displayName || 'Unknown',
-            event_code: eventCode
+          return {
+            file: processedFile,
+            id: uploadId,
+            progress: 0,
+            status: 'pending' as const,
+            retryCount: 0,
+            maxRetries: 3,
+          };
+        })
+      );
+
+      setUploadFiles(processedFiles);
+
+      // Upload files in parallel with progress tracking
+      const uploadResults: Array<{
+        uploadFile: UploadFile;
+        success: boolean;
+        metadata?: {
+          filename: string;
+          file_path: string;
+          file_size: number;
+          mime_type: string;
+        };
+        error?: string;
+      }> = [];
+
+      const uploadPromises = processedFiles.map(async (uploadFile) => {
+        const { file } = uploadFile;
+        
+        // Update status to uploading
+        setUploadFiles(prev => prev.map(f => 
+          f.id === uploadFile.id ? { ...f, status: 'uploading' } : f
+        ));
+
+        try {
+          // Keep original filename but sanitize it for safe storage
+          const originalName = file.name;
+          const sanitizedFileName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
+          const filePath = `${eventCode}/${sanitizedFileName}`;
+
+          // Upload file to storage with progress tracking (chunked for large files)
+          await uploadFileInChunks(file, filePath, (progress) => {
+            setUploadFiles(prev => prev.map(f => 
+              f.id === uploadFile.id ? { ...f, progress } : f
+            ));
           });
 
-        if (dbError) {
-          console.error('Database error:', dbError);
-          // Don't throw error here - file was uploaded successfully
-          // Just log the error and continue
+          // Store metadata for batch insert
+          uploadResults.push({
+            uploadFile,
+            success: true,
+            metadata: {
+              filename: sanitizedFileName,
+              file_path: filePath,
+              file_size: file.size,
+              mime_type: file.type,
+            }
+          });
+
+          // Update progress to 100% and mark as completed
+          setUploadFiles(prev => prev.map(f => 
+            f.id === uploadFile.id ? { ...f, progress: 100, status: 'completed' } : f
+          ));
+
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          uploadResults.push({
+            uploadFile,
+            success: false,
+            error: errorMessage
+          });
+          
+          setUploadFiles(prev => prev.map(f => 
+            f.id === uploadFile.id ? { 
+              ...f, 
+              status: 'error', 
+              error: errorMessage 
+            } : f
+          ));
+        }
+      });
+
+      // Wait for all uploads to complete
+      await Promise.allSettled(uploadPromises);
+
+      // Batch insert all successful uploads to database
+      const successfulUploads = uploadResults.filter(r => r.success && r.metadata);
+      if (successfulUploads.length > 0) {
+        const batchData = successfulUploads.map(result => ({
+          filename: result.metadata!.filename,
+          file_path: result.metadata!.file_path,
+          file_size: result.metadata!.file_size,
+          mime_type: result.metadata!.mime_type,
+          uploader_name: displayName || 'Unknown',
+          event_code: eventCode
+        }));
+
+        const { error: batchDbError } = await supabase
+          .from('media')
+          .insert(batchData);
+
+        if (batchDbError) {
+          console.error('Batch database error:', batchDbError);
+          // Individual files were uploaded successfully, just database metadata failed
         }
       }
-      
-      // Show success toast
-      showToast(`Successfully uploaded ${files.length} file${files.length > 1 ? 's' : ''}!`);
-      
-      // Refresh gallery
-      setRefreshKey(prev => prev + 1);
-      
-      // Clear file input
-      event.target.value = '';
-      
+
+      // Check results using the uploadResults array
+      const completedFiles = uploadResults.filter(r => r.success).length;
+      const errorFiles = uploadResults.filter(r => !r.success).length;
+
+      if (completedFiles > 0) {
+        showToast(`Successfully uploaded ${completedFiles} file${completedFiles > 1 ? 's' : ''}!`);
+        // Small delay to ensure database is updated before refreshing gallery
+        setTimeout(() => {
+          setRefreshKey(prev => prev + 1);
+        }, 500);
+      }
+
+      if (errorFiles > 0) {
+        showToast(`${errorFiles} file${errorFiles > 1 ? 's' : ''} failed to upload`, 'error');
+      }
+
+      // Clear upload files after 3 seconds
+      setTimeout(() => {
+        setUploadFiles([]);
+      }, 3000);
+
     } catch (error) {
       console.error('Upload error:', error);
-      
-      let errorMessage: string;
-      if (error instanceof Error) {
-        // Try to get the message, but fallback to string representation of error if message is problematic
-        try {
-          errorMessage = error.message;
-        } catch (msgError) {
-          console.error("Error accessing error.message:", msgError);
-          errorMessage = `An unexpected error occurred (failed to get error message). Details: ${String(error)}`;
-        }
-      } else {
-        errorMessage = `An unknown error occurred. Details: ${String(error)}`;
-      }
-
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setUploadError(errorMessage);
       showToast(errorMessage, 'error');
     } finally {
       setIsUploading(false);
+      // Clear file input
+      event.target.value = '';
     }
   };
 
@@ -254,6 +485,57 @@ export default function UploaderAndGallery() {
                   Upload Photos & Videos
                 </button>
               </div>
+
+              {/* Upload Progress */}
+              {uploadFiles.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium text-foreground">Upload Progress</h4>
+                    {uploadFiles.some(f => f.status === 'error' && f.retryCount < f.maxRetries) && (
+                      <button
+                        onClick={retryFailedUploads}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Retry Failed
+                      </button>
+                    )}
+                  </div>
+                  {uploadFiles.map((uploadFile) => (
+                    <div key={uploadFile.id} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground truncate flex-1 mr-2">
+                          {uploadFile.file.name}
+                          {uploadFile.retryCount > 0 && (
+                            <span className="text-orange-500 ml-1">
+                              (Retry {uploadFile.retryCount}/{uploadFile.maxRetries})
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {uploadFile.progress}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full transition-all duration-300 ${
+                            uploadFile.status === 'completed' 
+                              ? 'bg-green-500' 
+                              : uploadFile.status === 'error'
+                              ? 'bg-red-500'
+                              : uploadFile.status === 'retrying'
+                              ? 'bg-orange-500'
+                              : 'bg-primary'
+                          }`}
+                          style={{ width: `${uploadFile.progress}%` }}
+                        />
+                      </div>
+                      {uploadFile.status === 'error' && uploadFile.error && (
+                        <p className="text-xs text-red-500">{uploadFile.error}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Gallery Counter - styled like Create Hashtag and centered */}
               <div className="text-center">

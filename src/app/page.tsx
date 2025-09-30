@@ -588,11 +588,17 @@ export default function Home() {
         )}
 
         {/* Slide-out Menu Panel */}
-        <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
-          isMenuOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}>
+        <div 
+          className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+            isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+          onClick={toggleMenu}
+        >
           {/* Menu Items */}
-          <div className="px-6 pt-6 space-y-4">
+          <div 
+            className="px-6 pt-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={() => {
                 handleSignIn();
@@ -779,11 +785,17 @@ export default function Home() {
         )}
 
         {/* Slide-out Menu Panel */}
-        <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
-          isMenuOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}>
+        <div 
+          className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+            isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+          onClick={toggleMenu}
+        >
           {/* Menu Items */}
-          <div className="px-6 pt-6 space-y-4">
+          <div 
+            className="px-6 pt-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={() => {
                 handleSignIn();
@@ -798,9 +810,6 @@ export default function Home() {
 
         <div className="container mx-auto px-4 py-4 sm:py-8">
           <div className="max-w-md mx-auto">
-            <div className="text-center mb-8">
-              <InstallPrompt />
-            </div>
             <NameForm onComplete={handleNameComplete} onBack={handleBackToEvent} eventCode={eventCode} />
           </div>
         </div>
@@ -833,11 +842,17 @@ export default function Home() {
       )}
 
       {/* Slide-out Menu Panel */}
-      <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
-        isMenuOpen ? 'translate-x-0' : 'translate-x-full'
-      }`}>
+      <div 
+        className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+          isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        onClick={toggleMenu}
+      >
         {/* Menu Items */}
-        <div className="px-6 pt-6 space-y-4">
+        <div 
+          className="px-6 pt-6 space-y-4"
+          onClick={(e) => e.stopPropagation()}
+        >
           {authMode !== 'authenticated' && (
             <button
               onClick={() => {

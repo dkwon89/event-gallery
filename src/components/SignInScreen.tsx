@@ -90,11 +90,17 @@ export default function SignInScreen({ onSignInSuccess, onBackToAuth, onSwitchTo
       )}
 
       {/* Slide-out Menu Panel */}
-      <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
-        isMenuOpen ? 'translate-x-0' : 'translate-x-full'
-      }`}>
+      <div 
+        className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+          isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        onClick={toggleMenu}
+      >
         {/* Menu Items */}
-        <div className="px-6 pt-6 space-y-4">
+        <div 
+          className="px-6 pt-6 space-y-4"
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
             onClick={() => {
               onBackToAuth();

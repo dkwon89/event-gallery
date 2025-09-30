@@ -37,6 +37,7 @@ export default function LightboxModal({
   const [lastPanY, setLastPanY] = useState(0);
   const [isPanning, setIsPanning] = useState(false);
   const [showControls, setShowControls] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   // Auto-hide controls after 3 seconds
   useEffect(() => {
@@ -57,6 +58,7 @@ export default function LightboxModal({
       setPanX(0);
       setPanY(0);
       setIsPanning(false);
+      setImageLoaded(false);
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -248,11 +250,20 @@ export default function LightboxModal({
         >
           {fileType === 'image' ? (
             <div className="w-full h-full flex items-center justify-center relative">
+              {/* Loading spinner */}
+              {!imageLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                </div>
+              )}
+              
               <div 
                 className="cursor-pointer"
                 style={{ 
                   transform: `scale(${scale}) translate(${panX}px, ${panY}px)`,
-                  transformOrigin: 'center center'
+                  transformOrigin: 'center center',
+                  opacity: imageLoaded ? 1 : 0,
+                  transition: 'opacity 0.3s ease-in-out'
                 }}
                 onClick={() => {
                   // Only toggle controls if not zoomed in and not panning
@@ -270,8 +281,7 @@ export default function LightboxModal({
                 style={{ width: '100vw', height: '100vh', objectFit: 'contain' }}
                 quality={95}
                 priority
-                placeholder="blur"
-                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+                onLoad={() => setImageLoaded(true)}
               />
               </div>
               
