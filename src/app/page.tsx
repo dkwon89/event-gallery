@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import JoinForm from '@/components/JoinForm';
 import NameForm from '@/components/NameForm';
 import UploaderAndGallery from '@/components/UploaderAndGallery';
-import InstallPrompt from '@/components/InstallPrompt';
 import ConfigError from '@/components/ConfigError';
 import SignUpScreen from '@/components/SignUpScreen';
 import SignInScreen from '@/components/SignInScreen';
@@ -643,7 +642,6 @@ export default function Home() {
                   </button>
                 </div>
               )}
-              <InstallPrompt />
             </div>
         
             {/* Welcome Text */}
@@ -888,10 +886,6 @@ export default function Home() {
 
         <div className="container mx-auto px-4 py-4 sm:py-8">
           <div className="max-w-md mx-auto">
-            <div className="text-center mb-8">
-              <InstallPrompt />
-            </div>
-        
             {/* Welcome Text */}
             <div className="text-center pt-20 pb-4 mb-4">
               <h1 className="text-2xl font-semibold text-foreground">

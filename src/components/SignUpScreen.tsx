@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useToast } from './Toast';
-import InstallPrompt from './InstallPrompt';
 
 interface SignUpScreenProps {
   onSignUpSuccess: (userId: string) => void;
@@ -162,9 +161,6 @@ export default function SignUpScreen({ onSignUpSuccess, onBackToAuth }: SignUpSc
 
       <div className="container mx-auto px-4 py-4 sm:py-8">
         <div className="max-w-md mx-auto">
-          <div className="text-center mb-8">
-            <InstallPrompt />
-          </div>
         </div>
 
         {/* Welcome Text */}
